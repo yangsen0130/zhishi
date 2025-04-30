@@ -29,7 +29,7 @@
     <mysql.version>8.0.31</mysql.version>
     <knife4j.version>4.1.0</knife4j.version>
     <hutool.version>5.8.15</hutool.version>
-    <jjwt.version>0.9.1</jjwt.version>
+    <jjwt.version>0.11.5</jjwt.version>
     <jackson.version>2.13.3</jackson.version>
   </properties>
 
@@ -111,12 +111,26 @@
       </dependency>
 
       <!-- JWT -->
+<!--      <dependency>-->
+<!--        <groupId>io.jsonwebtoken</groupId>-->
+<!--        <artifactId>jjwt</artifactId>-->
+<!--        <version>${jjwt.version}</version>-->
+<!--      </dependency>-->
       <dependency>
         <groupId>io.jsonwebtoken</groupId>
-        <artifactId>jjwt</artifactId>
-        <version>${jjwt.version}</version>
+        <artifactId>jjwt-api</artifactId>
+        <version>0.11.5</version>
       </dependency>
-
+      <dependency>
+        <groupId>io.jsonwebtoken</groupId>
+        <artifactId>jjwt-impl</artifactId>
+        <version>0.11.5</version>
+      </dependency>
+      <dependency>
+        <groupId>io.jsonwebtoken</groupId>
+        <artifactId>jjwt-jackson</artifactId> <!-- or jjwt-gson, jjwt-orgjson -->
+        <version>0.11.5</version>
+      </dependency>
       <dependency>
         <groupId>org.yaml</groupId>
         <artifactId>snakeyaml</artifactId>

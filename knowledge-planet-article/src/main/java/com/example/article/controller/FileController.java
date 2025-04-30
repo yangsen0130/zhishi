@@ -13,14 +13,14 @@ import java.util.HashMap;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/file")
+@RequestMapping("/article")
 @Tag(name = "文件接口", description = "处理文件上传下载相关请求")
 public class FileController {
 
     @Autowired
     private FileService fileService;
 
-    @PostMapping("/upload")
+    @PostMapping("/fileupload")
     @Operation(summary = "上传图片")
     public Result<Map<String, String>> uploadImage(
             @RequestParam("file") MultipartFile file,

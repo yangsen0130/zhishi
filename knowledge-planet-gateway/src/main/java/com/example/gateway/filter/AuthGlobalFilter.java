@@ -1,4 +1,3 @@
-// src/main/java/com/example/gateway/filter/AuthGlobalFilter.java
 package com.example.gateway.filter;
 
 import com.example.common.util.JwtUtil;
@@ -8,6 +7,7 @@ import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
 import org.springframework.core.io.buffer.DataBuffer;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.http.server.reactive.ServerHttpResponse;
@@ -34,8 +34,13 @@ public class AuthGlobalFilter implements GlobalFilter, Ordered {
         ServerHttpRequest request = exchange.getRequest();
         String path = request.getURI().getPath();
 
-        // 白名单放行
-        if(isWhitelist(path)) {
+        // 1. 预检请求直接放行
+        if (HttpMethod.OPTIONS.equals(request.getMethod())) {
+            return chain.filter(exchange);
+        }
+
+        // 2. 白名单路径放行
+        if (isWhitelist(path)) {
             return chain.filter(exchange);
         }
 

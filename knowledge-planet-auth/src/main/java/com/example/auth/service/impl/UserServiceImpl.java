@@ -11,12 +11,21 @@ import com.example.auth.service.UserService;
 import com.example.common.dto.UserLoginDTO;
 import com.example.common.dto.UserRegisterDTO;
 import com.example.common.entity.User;
+import com.example.common.redis.RedisCache;
+import com.example.common.redis.RedisKey;
+import com.example.common.redis.RedisManager;
 import com.example.common.util.JwtUtil;
 import com.example.common.vo.UserVO;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.util.concurrent.TimeUnit;
 
 @Service
 public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements UserService {
+
+    @Autowired
+    private RedisCache redisCache;
 
     @Override
     public UserVO register(UserRegisterDTO registerDTO) {
@@ -56,22 +65,48 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     @Override
     public String login(UserLoginDTO loginDTO) {
+        String username = loginDTO.getUsername();
+        String loginErrorKey = RedisManager.createIfNotExist(RedisKey.LOGIN_USERNAME_INPUT_ERROR_CNT, username);
+
+        // 检查用户是否因为多次失败尝试而被锁定
+        Integer errorCount = redisCache.get(loginErrorKey, Integer.class);
+        if (errorCount != null && errorCount >= 3) {
+            throw new RuntimeException("登录失败次数过多，账户已锁定，请30分钟后再试");
+        }
+
         // 查询用户
-        User user = this.getOne(new LambdaQueryWrapper<User>()
-                .eq(User::getUsername, loginDTO.getUsername()));
+        User user = this.getOne(new LambdaQueryWrapper<User>().eq(User::getUsername, loginDTO.getUsername()));
 
         // 用户不存在或已禁用
         if (user == null || user.getStatus() != 1) {
-            throw new RuntimeException("用户不存在或已被禁用");
+            // 增加错误计数
+            incrementLoginErrorCount(loginErrorKey);
+            throw new RuntimeException("用户不存在");
         }
 
         // 密码校验
         if (!BCrypt.checkpw(loginDTO.getPassword(), user.getPassword())) {
+            // 增加错误计数
+            incrementLoginErrorCount(loginErrorKey);
             throw new RuntimeException("密码错误");
         }
 
+        // 登录成功，清除错误计数
+        redisCache.delete(loginErrorKey);
+
         // 生成token
         return JwtUtil.generateToken(user.getId(), user.getUsername());
+    }
+
+    /**
+     * 增加登录错误计数并设置过期时间
+     */
+    private void incrementLoginErrorCount(String key) {
+        Long count = redisCache.increment(key, 1);
+        // 为第一次错误设置过期时间（30分钟后自动解锁）
+        if (count != null && count == 1) {
+            redisCache.expire(key, 30, TimeUnit.MINUTES);
+        }
     }
 
     @Override

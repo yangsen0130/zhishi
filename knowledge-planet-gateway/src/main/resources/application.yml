@@ -4,8 +4,23 @@ server:
   port: 9100
 
 spring:
+
+  codec:
+    max-in-memory-size: 10MB
+  webflux:   # 或更大
+    multipart:
+      max-in-memory-size: 10MB
+      max-part-size: 50MB      #   单个 part 的大小
+      max-request-size: 10MB   #   整个表单的大小（2.7.0 以后可省略）
+
   cloud:
     gateway:
+      httpclient:
+        max-in-memory-size: 10MB
+      default-filters: # ❹ 如果还想做兜底保护，可以再加一个 RequestSize 过滤器
+        - name: RequestSize
+          args:
+            maxSize: 52428800   # 50 * 1024 * 1024
       routes:
         - id: auth-service
           uri: lb://knowledge-planet-auth
