@@ -11,9 +11,11 @@ import com.example.auth.service.UserService;
 import com.example.common.dto.UserLoginDTO;
 import com.example.common.dto.UserRegisterDTO;
 import com.example.common.entity.User;
+import com.example.common.exception.BusinessException;
 import com.example.common.redis.RedisCache;
 import com.example.common.redis.RedisKey;
 import com.example.common.redis.RedisManager;
+import com.example.common.response.Code;
 import com.example.common.util.JwtUtil;
 import com.example.common.vo.UserVO;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,7 +35,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         long count = this.count(new LambdaQueryWrapper<User>()
                 .eq(User::getUsername, registerDTO.getUsername()));
         if (count > 0) {
-            throw new RuntimeException("用户名已存在");
+            throw new BusinessException(Code.USERNAME_ALREADY_EXIST);
         }
 
         // 检查邮箱是否存在
@@ -41,7 +43,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             count = this.count(new LambdaQueryWrapper<User>()
                     .eq(User::getEmail, registerDTO.getEmail()));
             if (count > 0) {
-                throw new RuntimeException("邮箱已存在");
+                throw new BusinessException(Code.EMAIL_ALREADY_EXIST);
             }
         }
 
@@ -71,7 +73,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         // 检查用户是否因为多次失败尝试而被锁定
         Integer errorCount = redisCache.get(loginErrorKey, Integer.class);
         if (errorCount != null && errorCount >= 3) {
-            throw new RuntimeException("登录失败次数过多，账户已锁定，请30分钟后再试");
+            throw new BusinessException(Code.USER_ACCOUNT_LOCKED, "登录失败次数过多，账户已锁定，请30分钟后再试");
         }
 
         // 查询用户
@@ -81,14 +83,14 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         if (user == null || user.getStatus() != 1) {
             // 增加错误计数
             incrementLoginErrorCount(loginErrorKey);
-            throw new RuntimeException("用户不存在");
+            throw new BusinessException(Code.USER_NOT_EXIST);
         }
 
         // 密码校验
         if (!BCrypt.checkpw(loginDTO.getPassword(), user.getPassword())) {
             // 增加错误计数
             incrementLoginErrorCount(loginErrorKey);
-            throw new RuntimeException("密码错误");
+            throw new BusinessException(Code.USER_PASSWORD_ERROR);
         }
 
         // 登录成功，清除错误计数
@@ -113,7 +115,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     public UserVO getUserInfo(Long userId) {
         User user = this.getById(userId);
         if (user == null) {
-            throw new RuntimeException("用户不存在");
+            throw new BusinessException(Code.USER_NOT_EXIST);
         }
 
         UserVO userVO = new UserVO();
@@ -124,13 +126,13 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     @Override
     public UserVO validateToken(String token) {
         if (token == null || token.isEmpty()) {
-            throw new RuntimeException("Token不能为空");
+            throw new BusinessException(Code.PARAM_ERROR, "Token不能为空");
         }
 
         // 解析token
         Long userId = JwtUtil.getUserId(token);
         if (userId == null) {
-            throw new RuntimeException("无效的Token");
+            throw new BusinessException(Code.UNAUTHORIZED, "无效的Token");
         }
 
         // 查询用户信息

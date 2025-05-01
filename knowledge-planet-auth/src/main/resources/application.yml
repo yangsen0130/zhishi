@@ -3,6 +3,9 @@
 server:
   port: 9101
 spring:
+  redis:
+    host: 127.0.0.1
+    port: 6379
   application:
     name: knowledge-planet-auth
   config:
@@ -23,6 +26,7 @@ spring:
       min-idle: 5
       max-active: 20
       max-wait: 60000
+
 
   # Swagger配置
 springdoc:

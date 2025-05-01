@@ -4,7 +4,7 @@ package com.example.auth.controller;
 import com.example.auth.service.UserService;
 import com.example.common.dto.UserLoginDTO;
 import com.example.common.dto.UserRegisterDTO;
-import com.example.common.result.Result;
+import com.example.common.response.Response;
 import com.example.common.vo.UserVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -24,24 +24,24 @@ public class AuthController {
 
     @PostMapping("/register")
     @Operation(summary = "用户注册")
-    public Result<UserVO> register(@RequestBody UserRegisterDTO registerDTO) {
+    public Response<UserVO> register(@RequestBody UserRegisterDTO registerDTO) {
         UserVO userVO = userService.register(registerDTO);
-        return Result.success(userVO);
+        return Response.success(userVO);
     }
 
     @PostMapping("/login")
     @Operation(summary = "用户登录")
-    public Result<Map<String, Object>> login(@RequestBody UserLoginDTO loginDTO) {
+    public Response<Map<String, Object>> login(@RequestBody UserLoginDTO loginDTO) {
         String token = userService.login(loginDTO);
         Map<String, Object> map = new HashMap<>();
         map.put("token", token);
-        return Result.success(map);
+        return Response.success(map);
     }
 
     @PostMapping("/validate")
     @Operation(summary = "验证Token")
-    public Result<UserVO> validateToken(@RequestHeader("Authorization") String token) {
+    public Response<UserVO> validateToken(@RequestHeader("Authorization") String token) {
         UserVO userVO = userService.validateToken(token);
-        return Result.success(userVO);
+        return Response.success(userVO);
     }
 }

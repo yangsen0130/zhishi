@@ -10,7 +10,7 @@ import com.example.common.dto.OrderCreateDTO;
 import com.example.common.entity.Order;
 import com.example.common.entity.UserPlanet;
 import com.example.common.feign.ArticleFeignClient;
-import com.example.common.result.Result;
+import com.example.common.response.Response;
 import com.example.common.vo.OrderVO;
 import com.example.common.vo.PlanetVO;
 import com.example.order.mapper.OrderMapper;
@@ -37,12 +37,12 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
     @Override
     public OrderVO createOrder(OrderCreateDTO orderDTO, Long userId) {
         // 获取星球信息
-        Result<PlanetVO> planetResult = articleFeignClient.getPlanetDetail(orderDTO.getPlanetId());
-        if (planetResult.getCode() != 200 || planetResult.getData() == null) {
+        Response<PlanetVO> planetResponse = articleFeignClient.getPlanetDetail(orderDTO.getPlanetId());
+        if (planetResponse.getCode() != 200 || planetResponse.getData() == null) {
             throw new RuntimeException("星球不存在");
         }
 
-        PlanetVO planet = planetResult.getData();
+        PlanetVO planet = planetResponse.getData();
 
         // 检查用户是否已经购买过该星球
         if (checkUserPlanetOrder(userId, planet.getId())) {
@@ -106,9 +106,9 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         BeanUtil.copyProperties(order, orderVO);
 
         // 获取星球信息
-        Result<PlanetVO> planetResult = articleFeignClient.getPlanetDetail(order.getPlanetId());
-        if (planetResult.getCode() == 200 && planetResult.getData() != null) {
-            orderVO.setPlanetName(planetResult.getData().getName());
+        Response<PlanetVO> planetResponse = articleFeignClient.getPlanetDetail(order.getPlanetId());
+        if (planetResponse.getCode() == 200 && planetResponse.getData() != null) {
+            orderVO.setPlanetName(planetResponse.getData().getName());
         }
 
         return orderVO;
@@ -132,9 +132,9 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         BeanUtil.copyProperties(order, orderVO);
 
         // 获取星球信息
-        Result<PlanetVO> planetResult = articleFeignClient.getPlanetDetail(order.getPlanetId());
-        if (planetResult.getCode() == 200 && planetResult.getData() != null) {
-            orderVO.setPlanetName(planetResult.getData().getName());
+        Response<PlanetVO> planetResponse = articleFeignClient.getPlanetDetail(order.getPlanetId());
+        if (planetResponse.getCode() == 200 && planetResponse.getData() != null) {
+            orderVO.setPlanetName(planetResponse.getData().getName());
         }
 
         return orderVO;
@@ -160,9 +160,9 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         // 获取星球信息
         java.util.Map<Long, String> planetNames = new java.util.HashMap<>();
         for (Long planetId : planetIds) {
-            Result<PlanetVO> planetResult = articleFeignClient.getPlanetDetail(planetId);
-            if (planetResult.getCode() == 200 && planetResult.getData() != null) {
-                planetNames.put(planetId, planetResult.getData().getName());
+            Response<PlanetVO> planetResponse = articleFeignClient.getPlanetDetail(planetId);
+            if (planetResponse.getCode() == 200 && planetResponse.getData() != null) {
+                planetNames.put(planetId, planetResponse.getData().getName());
             }
         }
 

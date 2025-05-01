@@ -4,7 +4,7 @@
 package com.example.auth.controller;
 
 import com.example.auth.service.UserService;
-import com.example.common.result.Result;
+import com.example.common.response.Response;
 import com.example.common.vo.UserVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -21,15 +21,15 @@ public class UserController {
 
     @GetMapping("/info/{userId}")
     @Operation(summary = "获取用户信息")
-    public Result<UserVO> getUserInfo(@PathVariable Long userId) {
+    public Response<UserVO> getUserInfo(@PathVariable Long userId) {
         UserVO userVO = userService.getUserInfo(userId);
-        return Result.success(userVO);
+        return Response.success(userVO);
     }
 
     @GetMapping("/info")
     @Operation(summary = "获取当前用户信息")
-    public Result<UserVO> getCurrentUserInfo(@RequestHeader("X-User-Id") Long userId) {
+    public Response<UserVO> getCurrentUserInfo(@RequestHeader("X-User-Id") Long userId) {
         UserVO userVO = userService.getUserInfo(userId);
-        return Result.success(userVO);
+        return Response.success(userVO);
     }
 }

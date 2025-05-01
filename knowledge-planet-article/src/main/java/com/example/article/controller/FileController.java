@@ -1,8 +1,9 @@
-// src/main/java/com/example/article/controller/FileController.java
 package com.example.article.controller;
 
 import com.example.article.service.FileService;
-import com.example.common.result.Result;
+import com.example.common.exception.BusinessException;
+import com.example.common.response.Code;
+import com.example.common.response.Response;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,19 +23,19 @@ public class FileController {
 
     @PostMapping("/fileupload")
     @Operation(summary = "上传图片")
-    public Result<Map<String, String>> uploadImage(
+    public Response<Map<String, String>> uploadImage(
             @RequestParam("file") MultipartFile file,
             @RequestHeader("X-User-Id") Long userId) {
 
         // Validate file
         if (file.isEmpty()) {
-            return Result.error("上传文件不能为空");
+            throw new BusinessException(Code.FILE_EMPTY);
         }
 
         // Check content type
         String contentType = file.getContentType();
         if (contentType == null || !contentType.startsWith("image/")) {
-            return Result.error("只能上传图片文件");
+            throw new BusinessException(Code.FILE_TYPE_ERROR, "只能上传图片文件");
         }
 
         // Upload file
@@ -43,6 +44,6 @@ public class FileController {
         // Return result
         Map<String, String> data = new HashMap<>();
         data.put("url", fileUrl);
-        return Result.success(data);
+        return Response.success(data);
     }
 }

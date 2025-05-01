@@ -11,7 +11,7 @@ import com.example.article.service.PlanetService;
 import com.example.common.dto.ArticleCreateDTO;
 import com.example.common.entity.Article;
 import com.example.common.feign.AuthFeignClient;
-import com.example.common.result.Result;
+import com.example.common.response.Response;
 import com.example.common.vo.ArticleVO;
 import com.example.common.vo.UserVO;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,7 +20,6 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
@@ -93,9 +92,9 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
 
         Map<Long, UserVO> userMap = new java.util.HashMap<>();
         for (Long authorId : authorIds) {
-            Result<UserVO> userResult = authFeignClient.getUserInfo(authorId);
-            if (userResult.getCode() == 200 && userResult.getData() != null) {
-                userMap.put(authorId, userResult.getData());
+            Response<UserVO> userResponse = authFeignClient.getUserInfo(authorId);
+            if (userResponse.getCode() == 200 && userResponse.getData() != null) {
+                userMap.put(authorId, userResponse.getData());
             }
         }
 
@@ -116,9 +115,9 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         BeanUtil.copyProperties(article, vo);
 
         // 获取作者信息
-        Result<UserVO> userResult = authFeignClient.getUserInfo(article.getAuthorId());
-        if (userResult.getCode() == 200 && userResult.getData() != null) {
-            vo.setAuthorName(userResult.getData().getUsername());
+        Response<UserVO> userResponse = authFeignClient.getUserInfo(article.getAuthorId());
+        if (userResponse.getCode() == 200 && userResponse.getData() != null) {
+            vo.setAuthorName(userResponse.getData().getUsername());
         }
 
         // 获取星球信息

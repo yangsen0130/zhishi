@@ -3,7 +3,7 @@ package com.example.article.controller;
 
 import com.example.article.service.PlanetService;
 import com.example.common.dto.PlanetCreateDTO;
-import com.example.common.result.Result;
+import com.example.common.response.Response;
 import com.example.common.vo.PlanetVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -22,31 +22,31 @@ public class PlanetController {
 
     @PostMapping("/create")
     @Operation(summary = "创建星球")
-    public Result<PlanetVO> createPlanet(@RequestBody PlanetCreateDTO planetDTO,
-                                         @RequestHeader("X-User-Id") Long userId) {
+    public Response<PlanetVO> createPlanet(@RequestBody PlanetCreateDTO planetDTO,
+                                           @RequestHeader("X-User-Id") Long userId) {
         PlanetVO planetVO = planetService.createPlanet(planetDTO, userId);
-        return Result.success(planetVO);
+        return Response.success(planetVO);
     }
 
     @GetMapping("/list")
     @Operation(summary = "获取星球列表")
-    public Result<List<PlanetVO>> getPlanetList() {
+    public Response<List<PlanetVO>> getPlanetList() {
         List<PlanetVO> planetList = planetService.getPlanetList();
-        return Result.success(planetList);
+        return Response.success(planetList);
     }
 
     @GetMapping("/detail/{planetId}")
     @Operation(summary = "获取星球详情")
-    public Result<PlanetVO> getPlanetDetail(@PathVariable Long planetId) {
+    public Response<PlanetVO> getPlanetDetail(@PathVariable Long planetId) {
         PlanetVO planetVO = planetService.getPlanetDetail(planetId);
-        return Result.success(planetVO);
+        return Response.success(planetVO);
     }
 
     @GetMapping("/access/{planetId}")
     @Operation(summary = "检查用户是否有权限访问星球")
-    public Result<Boolean> checkUserPlanetAccess(@PathVariable Long planetId,
-                                                 @RequestHeader("X-User-Id") Long userId) {
+    public Response<Boolean> checkUserPlanetAccess(@PathVariable Long planetId,
+                                                   @RequestHeader("X-User-Id") Long userId) {
         boolean hasAccess = planetService.checkUserPlanetAccess(userId, planetId);
-        return Result.success(hasAccess);
+        return Response.success(hasAccess);
     }
 }
