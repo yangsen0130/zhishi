@@ -1,0 +1,67 @@
+# src/main/resources/shardingsphere-auth-local.yaml
+
+dataSources:
+  article-db-0:
+    dataSourceClassName: com.zaxxer.hikari.HikariDataSource
+    driverClassName: com.mysql.cj.jdbc.Driver
+    # 确保这里也添加了 allowPublicKeyRetrieval=true (根据之前的错误)
+    jdbcUrl: jdbc:mysql://localhost:3306/article_db_0?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+    username: root
+    password: root
+  article-db-1:
+    dataSourceClassName: com.zaxxer.hikari.HikariDataSource
+    driverClassName: com.mysql.cj.jdbc.Driver
+    # 确保这里也添加了 allowPublicKeyRetrieval=true (根据之前的错误)
+    jdbcUrl: jdbc:mysql://localhost:3306/article_db_1?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+    username: root
+    password: root
+
+rules:
+  - !SHARDING
+    tables:
+      article:
+        actualDataNodes: article-db-${0..1}.article_${0..3}
+        databaseStrategy:
+          standard:
+            shardingColumn: id
+            shardingAlgorithmName: article-db-inline
+        tableStrategy:
+          standard:
+            shardingColumn: id
+            shardingAlgorithmName: article-table-inline # article 表使用 article-table-inline
+
+      planet:
+        actualDataNodes: article-db-${0..1}.planet_${0..3}
+        databaseStrategy:
+          standard:
+            shardingColumn: id
+            shardingAlgorithmName: article-db-inline # 分库算法复用
+        tableStrategy:
+          standard:
+            shardingColumn: id
+            # ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓
+            shardingAlgorithmName: planet-table-inline # <-- 修正：指向正确的 planet 分表算法
+            # ↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑
+
+    # 分片算法
+    shardingAlgorithms:
+      # 分库算法
+      article-db-inline:
+        type: INLINE
+        props:
+          algorithm-expression: article-db-${id % 2}
+
+      # article 表的分表算法
+      article-table-inline:
+        type: INLINE
+        props:
+          algorithm-expression: article_${id % 4}
+
+      # planet 表的分表算法
+      planet-table-inline:
+        type: INLINE
+        props:
+          algorithm-expression: planet_${id % 4}
+
+props:
+  sql-show: true

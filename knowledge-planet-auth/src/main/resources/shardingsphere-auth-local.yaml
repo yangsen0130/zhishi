@@ -1,0 +1,55 @@
+# src/main/resources/shardingsphere-auth-local.yaml
+
+# Define the actual database sources
+dataSources:
+  user-db-0:
+    dataSourceClassName: com.zaxxer.hikari.HikariDataSource # Use dataSourceClassName for ShardingSphere config files
+    driverClassName: com.mysql.cj.jdbc.Driver # Optional if dataSourceClassName is specific enough
+    jdbcUrl: jdbc:mysql://localhost:3306/user_db_0?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
+    username: root
+    password: root
+    # Add any other Druid properties here if needed (e.g., initialSize, maxActive)
+  user-db-1:
+    dataSourceClassName: com.zaxxer.hikari.HikariDataSource
+    driverClassName: com.mysql.cj.jdbc.Driver
+    jdbcUrl: jdbc:mysql://localhost:3306/user_db_1?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
+    username: root
+    password: root
+
+# Define the sharding rules
+rules:
+  - !SHARDING # Use YAML tag !SHARDING for sharding rules
+    tables:
+      user:
+        actualDataNodes: user-db-${0..1}.user_${0..3}
+        databaseStrategy:
+          standard:
+            shardingColumn: id
+            shardingAlgorithmName: user-db-inline
+        tableStrategy:
+          standard:
+            shardingColumn: id
+            shardingAlgorithmName: user-table-inline
+#        keyGenerateStrategy:
+#          column: id
+#          keyGeneratorName: snowflake
+
+    shardingAlgorithms:
+      user-db-inline:
+        type: INLINE
+        props:
+          algorithm-expression: user-db-${id % 2}
+      user-table-inline:
+        type: INLINE
+        props:
+          algorithm-expression: user_${id % 4}
+
+#    keyGenerators:
+#      snowflake:
+#        type: SNOWFLAKE
+#        props:
+#          worker-id: 123 # Ensure this worker-id is unique across instances if deployed distributively
+
+# Define properties
+props:
+  sql-show: true # Enable SQL logging
