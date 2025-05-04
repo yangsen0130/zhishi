@@ -570,3 +570,33 @@ CREATE TABLE `article_3` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='文章表3';
 
 
+-- Drop Planet and UserPlanet related tables from both databases
+
+USE article_db_0;
+DROP TABLE IF EXISTS `planet_0`, `planet_1`, `planet_2`, `planet_3`;
+-- Assuming user_planet might exist sharded or not, drop it if it exists.
+-- If UserPlanet was in a different DB (like auth), drop it there.
+-- DROP TABLE IF EXISTS `user_planet`; -- Adjust DB if necessary
+
+USE article_db_1;
+DROP TABLE IF EXISTS `planet_0`, `planet_1`, `planet_2`, `planet_3`;
+-- DROP TABLE IF EXISTS `user_planet`; -- Adjust DB if necessary
+
+
+-- Alter Article tables in both databases to remove planet_id
+
+USE article_db_0;
+ALTER TABLE `article_0` DROP COLUMN `planet_id`, DROP INDEX `idx_planet`;
+ALTER TABLE `article_1` DROP COLUMN `planet_id`, DROP INDEX `idx_planet`;
+ALTER TABLE `article_2` DROP COLUMN `planet_id`, DROP INDEX `idx_planet`;
+ALTER TABLE `article_3` DROP COLUMN `planet_id`, DROP INDEX `idx_planet`;
+
+USE article_db_1;
+ALTER TABLE `article_0` DROP COLUMN `planet_id`, DROP INDEX `idx_planet`;
+ALTER TABLE `article_1` DROP COLUMN `planet_id`, DROP INDEX `idx_planet`;
+ALTER TABLE `article_2` DROP COLUMN `planet_id`, DROP INDEX `idx_planet`;
+ALTER TABLE `article_3` DROP COLUMN `planet_id`, DROP INDEX `idx_planet`;
+
+-- NOTE: You will also need to alter the `orders` table in its respective database
+--       to remove the `planet_id` column. Example (adjust table name if needed):
+-- ALTER TABLE `orders` DROP COLUMN `planet_id`;

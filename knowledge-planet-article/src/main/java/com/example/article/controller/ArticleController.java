@@ -1,4 +1,3 @@
-
 // src/main/java/com/example/article/controller/ArticleController.java
 package com.example.article.controller;
 
@@ -25,6 +24,7 @@ public class ArticleController {
     @Operation(summary = "创建文章")
     public Response<ArticleVO> createArticle(@RequestBody ArticleCreateDTO articleDTO,
                                              @RequestHeader("X-User-Id") Long userId) {
+        // userId is now the authorId implicitly
         ArticleVO articleVO = articleService.createArticle(articleDTO, userId);
         return Response.success(articleVO);
     }
@@ -33,15 +33,17 @@ public class ArticleController {
     @Operation(summary = "获取文章详情")
     public Response<ArticleVO> getArticleDetail(@PathVariable Long articleId,
                                                 @RequestHeader("X-User-Id") Long userId) {
+        // userId might be used for access control (e.g., checking purchase)
         ArticleVO articleVO = articleService.getArticleDetail(articleId, userId);
         return Response.success(articleVO);
     }
 
-    @GetMapping("/planet/{planetId}")
-    @Operation(summary = "获取星球下的文章列表")
-    public Response<List<ArticleVO>> getArticlesByPlanetId(@PathVariable Long planetId,
-                                                           @RequestHeader("X-User-Id") Long userId) {
-        List<ArticleVO> articleList = articleService.getArticlesByPlanetId(planetId, userId);
+    // Renamed endpoint, removed planetId
+    @GetMapping("/list")
+    @Operation(summary = "获取文章列表")
+    public Response<List<ArticleVO>> listArticles(@RequestHeader("X-User-Id") Long userId) {
+        // userId might be used for filtering or context, but not planet access
+        List<ArticleVO> articleList = articleService.listArticles(userId);
         return Response.success(articleList);
     }
 }

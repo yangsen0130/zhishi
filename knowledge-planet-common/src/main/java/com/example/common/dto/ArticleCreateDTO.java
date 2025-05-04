@@ -7,5 +7,5 @@ import lombok.Data;
 public class ArticleCreateDTO {
     private String title;
     private String content;
-    private Long planetId;
+    // Removed: private Long planetId;
 }

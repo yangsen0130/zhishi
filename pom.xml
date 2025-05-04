@@ -13,7 +13,7 @@
     <module>knowledge-planet-common</module>
     <module>knowledge-planet-gateway</module>
     <module>knowledge-planet-auth</module>
-    <module>knowledge-planet-order</module>
+<!--    <module>knowledge-planet-order</module>-->
     <module>knowledge-planet-article</module>
   </modules>
 

@@ -9,16 +9,24 @@ import java.util.List;
 public interface ArticleService {
     /**
      * 创建文章
+     * @param articleDTO Article data
+     * @param authorId The ID of the user creating the article
+     * @return Created Article VO
      */
     ArticleVO createArticle(ArticleCreateDTO articleDTO, Long authorId);
 
     /**
      * 获取文章详情
+     * @param articleId ID of the article
+     * @param userId ID of the user requesting the article (for potential access checks)
+     * @return Article VO
      */
     ArticleVO getArticleDetail(Long articleId, Long userId);
 
     /**
-     * 获取星球下的文章列表
+     * 获取文章列表 (No longer planet-specific)
+     * @param userId ID of the user requesting the list (for potential context/filtering)
+     * @return List of Article VOs
      */
-    List<ArticleVO> getArticlesByPlanetId(Long planetId, Long userId);
+    List<ArticleVO> listArticles(Long userId);
 }

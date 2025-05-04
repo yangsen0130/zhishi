@@ -34,9 +34,9 @@ public enum Code {
     ORDER_UNAUTHORIZED(3002, "无权操作此订单"),
 
     // 星球相关异常
-    PLANET_NOT_EXIST(4000, "星球不存在或已关闭"),
-    PLANET_ACCESS_DENIED(4001, "无权访问此星球"),
-    PLANET_ALREADY_PURCHASED(4002, "您已经是该星球成员，无需重复购买"),
+//    PLANET_NOT_EXIST(4000, "星球不存在或已关闭"),
+//    PLANET_ACCESS_DENIED(4001, "无权访问此星球"),
+//    PLANET_ALREADY_PURCHASED(4002, "您已经是该星球成员，无需重复购买"),
 
     // 文章相关异常
     ARTICLE_NOT_EXIST(5000, "文章不存在或已删除"),
