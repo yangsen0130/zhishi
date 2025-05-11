@@ -13,8 +13,9 @@
     <module>knowledge-planet-common</module>
     <module>knowledge-planet-gateway</module>
     <module>knowledge-planet-auth</module>
-<!--    <module>knowledge-planet-order</module>-->
+    <module>knowledge-planet-order</module> <!-- Add new module -->
     <module>knowledge-planet-article</module>
+<!--    <module>knowledge-planet-order</module>-->
   </modules>
 
   <properties>
@@ -25,13 +26,17 @@
     <spring-cloud.version>2021.0.5</spring-cloud.version>
     <spring-cloud-alibaba.version>2021.0.4.0</spring-cloud-alibaba.version>
     <mybatis-plus.version>3.5.2</mybatis-plus.version>
-    <druid.version>1.2.15</druid.version>
+    <!-- <druid.version>1.2.15</druid.version> --> <!-- Using Hikari via ShardingSphere -->
     <mysql.version>8.0.31</mysql.version>
     <knife4j.version>4.1.0</knife4j.version>
     <hutool.version>5.8.15</hutool.version>
     <jjwt.version>0.11.5</jjwt.version>
     <jackson.version>2.13.3</jackson.version>
     <shardingsphere.version>5.3.2</shardingsphere.version>
+    <lombok.version>1.18.32</lombok.version>
+    <spring-boot.version>2.7.18</spring-boot.version>
+    <rocketmq-stream.version>2021.0.1.0</rocketmq-stream.version> <!-- Check compatible version -->
+    <rocketmq-spring-boot-starter.version>2.2.3</rocketmq-spring-boot-starter.version>
   </properties>
 
   <dependencies>
@@ -39,10 +44,19 @@
       <groupId>org.projectlombok</groupId>
       <artifactId>lombok</artifactId>
     </dependency>
-
   </dependencies>
+
   <dependencyManagement>
     <dependencies>
+      <!-- Spring Boot -->
+      <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-dependencies</artifactId>
+        <version>${spring-boot.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+
       <!-- Spring Cloud -->
       <dependency>
         <groupId>org.springframework.cloud</groupId>
@@ -62,17 +76,22 @@
       </dependency>
 
       <dependency>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-dependencies</artifactId>
-        <version>2.7.18</version>
-        <type>pom</type>
-        <scope>import</scope>
+        <groupId>org.apache.rocketmq</groupId>
+        <artifactId>rocketmq-spring-boot-starter</artifactId>
+        <version>${rocketmq-spring-boot-starter.version}</version>
+      </dependency>
+
+      <!-- Spring Cloud Stream RocketMQ Binder -->
+      <dependency>
+        <groupId>com.alibaba.cloud</groupId>
+        <artifactId>spring-cloud-starter-stream-rocketmq</artifactId>
+        <version>${rocketmq-stream.version}</version>
       </dependency>
 
       <dependency>
         <groupId>org.projectlombok</groupId>
         <artifactId>lombok</artifactId>
-        <version>1.18.32</version>
+        <version>${lombok.version}</version>
         <scope>provided</scope>
       </dependency>
 
@@ -82,13 +101,6 @@
         <artifactId>mybatis-plus-boot-starter</artifactId>
         <version>${mybatis-plus.version}</version>
       </dependency>
-
-      <!-- Druid -->
-<!--      <dependency>-->
-<!--        <groupId>com.alibaba</groupId>-->
-<!--        <artifactId>druid-spring-boot-starter</artifactId>-->
-<!--        <version>${druid.version}</version>-->
-<!--      </dependency>-->
 
       <!-- MySQL -->
       <dependency>
@@ -112,11 +124,6 @@
       </dependency>
 
       <!-- JWT -->
-<!--      <dependency>-->
-<!--        <groupId>io.jsonwebtoken</groupId>-->
-<!--        <artifactId>jjwt</artifactId>-->
-<!--        <version>${jjwt.version}</version>-->
-<!--      </dependency>-->
       <dependency>
         <groupId>io.jsonwebtoken</groupId>
         <artifactId>jjwt-api</artifactId>
@@ -129,27 +136,24 @@
       </dependency>
       <dependency>
         <groupId>io.jsonwebtoken</groupId>
-        <artifactId>jjwt-jackson</artifactId> <!-- or jjwt-gson, jjwt-orgjson -->
+        <artifactId>jjwt-jackson</artifactId>
         <version>${jjwt.version}</version>
       </dependency>
+
+      <!-- SnakeYAML (often needed by Spring Boot/Cloud) -->
       <dependency>
         <groupId>org.yaml</groupId>
         <artifactId>snakeyaml</artifactId>
         <version>1.33</version>
       </dependency>
+
+      <!-- ShardingSphere -->
       <dependency>
         <groupId>org.apache.shardingsphere</groupId>
         <artifactId>shardingsphere-jdbc-core</artifactId>
         <version>${shardingsphere.version}</version>
       </dependency>
-<!--      <dependency>-->
-<!--        <groupId>org.apache.shardingsphere</groupId>-->
-<!--        <artifactId>shardingsphere-jdbc-core-spring-boot-starter</artifactId>-->
-<!--        <version>${shardingsphere.version}</version>-->
-<!--      </dependency>-->
     </dependencies>
-
-
   </dependencyManagement>
 
   <build>
@@ -161,9 +165,33 @@
         <configuration>
           <source>${java.version}</source>
           <target>${java.version}</target>
+
+          <encoding>${project.build.sourceEncoding}</encoding> <!-- 建议添加 -->
+          <annotationProcessorPaths>
+            <path>
+              <groupId>org.projectlombok</groupId>
+              <artifactId>lombok</artifactId>
+              <version>${lombok.version}</version> <!-- 使用已定义的属性 -->
+            </path>
+            <!-- 如果您有其他注解处理器，也可以在这里添加 -->
+          </annotationProcessorPaths>
         </configuration>
       </plugin>
-
+      <!-- Spring Boot Maven Plugin (Add to individual service modules if needed for packaging) -->
+      <!--
+      <plugin>
+          <groupId>org.springframework.boot</groupId>
+          <artifactId>spring-boot-maven-plugin</artifactId>
+          <version>${spring-boot.version}</version>
+          <executions>
+              <execution>
+                  <goals>
+                      <goal>repackage</goal>
+                  </goals>
+              </execution>
+          </executions>
+      </plugin>
+      -->
     </plugins>
   </build>
 </project>

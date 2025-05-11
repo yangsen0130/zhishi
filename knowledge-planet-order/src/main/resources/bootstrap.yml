@@ -1,0 +1,25 @@
+# src/main/resources/bootstrap.yml
+spring:
+  application:
+    name: knowledge-planet-order
+  cloud:
+    nacos:
+      # Nacos server address for configuration
+      config:
+        server-addr: 127.0.0.1:8848 # Replace with your Nacos server address
+        file-extension: yaml # Specify the config file format
+        # Optional: Define shared configurations or group/namespace if needed
+        # shared-configs:
+        #   - data-id: common.yaml
+        #     refresh: true
+        # group: DEFAULT_GROUP
+        # namespace: your_namespace_id
+      # Nacos server address for service discovery (can be same as config)
+      discovery:
+        server-addr: 127.0.0.1:8848 # Replace with your Nacos server address
+        # Optional: Define group/namespace if needed
+        # group: DEFAULT_GROUP
+        # namespace: your_namespace_id
+
+# Optional: If using Nacos for config, you might put some shared properties here
+# e.g., database connection details if shared across profiles

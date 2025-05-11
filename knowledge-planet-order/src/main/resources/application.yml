@@ -1,0 +1,74 @@
+# src/main/resources/application.yml
+server:
+  port: 9103
+
+spring:
+  application:
+    name: knowledge-planet-order
+  profiles:
+    active: local # Keep your active profile
+
+  # --- Database Configuration (USING SHARDINGSPHERE) ---
+  datasource:
+    driver-class-name: org.apache.shardingsphere.driver.ShardingSphereDriver
+    # URL points to the ShardingSphere configuration file on the classpath
+    url: jdbc:shardingsphere:classpath:shardingsphere-order-${spring.profiles.active}.yaml
+    # Username/Password are defined within the shardingsphere YAML file per datasource
+
+  # --- Mybatis Plus Configuration ---
+  mybatis-plus:
+    mapper-locations: classpath:mapper/**/*.xml
+    type-aliases-package: com.example.common.entity, com.example.order.entity # Include local entities if any
+    configuration:
+      map-underscore-to-camel-case: true
+      log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    global-config:
+      db-config:
+        # *** IMPORTANT: Use ASSIGN_ID for Snowflake ID generation by MybatisPlus ***
+        # This works well with ShardingSphere when sharding by 'id'
+        id-type: assign_id
+        # logic-delete configuration if needed
+  redis:
+    host: localhost
+    port: 6379
+  # --- Spring Cloud Stream & RocketMQ Configuration (Producer - Keep as before) ---
+  cloud:
+    stream:
+      rocketmq:
+        binder:
+          name-server: your-rocketmq-nameserver-addr:9876 # !!! IMPORTANT: Replace !!!
+      bindings:
+        paymentSuccessOutput-out-0:
+          destination: payment-success-topic
+          content-type: application/json
+          producer:
+            group: order-service-producer-group
+
+# --- Knife4j Swagger Configuration (Keep as before) ---
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: alpha
+  api-docs:
+    path: /v3/api-docs
+  group-configs:
+    - group: 'order-service'
+      paths-to-match: '/**'
+      packages-to-scan: com.example.order.controller
+
+# --- Custom Application Properties (Keep as before) ---
+app:
+  message-relay:
+    enabled: true
+    fixed-delay: 10000
+    batch-size: 50
+
+# --- Logging (Keep as before) ---
+logging:
+  level:
+    com.example.order: INFO
+    org.springframework.cloud.stream: INFO
+    org.apache.rocketmq: WARN
+    # Add ShardingSphere logging if needed for debugging
+    org.apache.shardingsphere: INFO # or DEBUG

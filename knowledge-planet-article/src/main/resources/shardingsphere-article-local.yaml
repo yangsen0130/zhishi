@@ -1,49 +1,70 @@
-
+# Define the actual database sources
 dataSources:
   article-db-0:
     dataSourceClassName: com.zaxxer.hikari.HikariDataSource
     driverClassName: com.mysql.cj.jdbc.Driver
     jdbcUrl: jdbc:mysql://localhost:3306/article_db_0?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
     username: root
-    password: root
+    password: root # Replace with your password
   article-db-1:
     dataSourceClassName: com.zaxxer.hikari.HikariDataSource
     driverClassName: com.mysql.cj.jdbc.Driver
     jdbcUrl: jdbc:mysql://localhost:3306/article_db_1?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
     username: root
-    password: root
+    password: root # Replace with your password
 
+# Define the sharding rules
 rules:
   - !SHARDING
     tables:
+      # Sharding rule for the 'article' table
       article:
         actualDataNodes: article-db-${0..1}.article_${0..3}
         databaseStrategy:
           standard:
-            shardingColumn: id
+            shardingColumn: id # Shard database based on article ID
             shardingAlgorithmName: article-db-inline
         tableStrategy:
           standard:
-            shardingColumn: id
+            shardingColumn: id # Shard table based on article ID
             shardingAlgorithmName: article-table-inline
 
-    # Removed: planet table configuration
+      # *** ADDED: Sharding rule for 'user_article_permission' table ***
+      # Shard based on article_id to keep permissions physically close to the article data
+      user_article_permission:
+        actualDataNodes: article-db-${0..1}.user_article_permission_${0..3} # Same topology as article
+        databaseStrategy:
+          standard:
+            shardingColumn: article_id # Shard database based on article ID
+            shardingAlgorithmName: article-db-inline # Use same DB algorithm as article
+        tableStrategy:
+          standard:
+            shardingColumn: article_id # Shard table based on article ID
+            shardingAlgorithmName: permission-table-inline # Use a specific table algorithm name
+        # No keyGenerateStrategy needed (PK 'id' is AUTO_INCREMENT)
 
-    # 分片算法
+    # Define Sharding Algorithms
     shardingAlgorithms:
-      # 分库算法
+      # Database sharding algorithm (mod 2) - Used by both article and permission
       article-db-inline:
         type: INLINE
         props:
-          algorithm-expression: article-db-${id % 2}
+          # For article table, uses 'id'. For permission table, uses 'article_id'.
+          algorithm-expression: article-db-${id % 2} # 'id' here refers to the respective shardingColumn
 
-      # article 表的分表算法
+      # Table sharding algorithm for 'article' (mod 4)
       article-table-inline:
         type: INLINE
         props:
           algorithm-expression: article_${id % 4}
 
-      # Removed: planet-table-inline algorithm
+      # *** ADDED: Table sharding algorithm for 'user_article_permission' (mod 4) ***
+      permission-table-inline:
+        type: INLINE
+        props:
+          # Use 'article_id' which is the shardingColumn for this table strategy
+          algorithm-expression: user_article_permission_${article_id % 4}
 
+# Define global properties
 props:
-  sql-show: true
+  sql-show: true # Log executed SQL statements

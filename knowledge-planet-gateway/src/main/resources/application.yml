@@ -1,26 +1,27 @@
-
 # src/main/resources/application.yml
 server:
   port: 9100
 
 spring:
-
+  # Keep existing codec/webflux settings
   codec:
     max-in-memory-size: 10MB
-  webflux:   # 或更大
+  webflux:
     multipart:
       max-in-memory-size: 10MB
-      max-part-size: 50MB      #   单个 part 的大小
-      max-request-size: 10MB   #   整个表单的大小（2.7.0 以后可省略）
+      max-part-size: 50MB
+      max-request-size: 10MB
 
   cloud:
     gateway:
+      # Keep existing httpclient/default-filters settings
       httpclient:
         max-in-memory-size: 10MB
-      default-filters: # ❹ 如果还想做兜底保护，可以再加一个 RequestSize 过滤器
+      default-filters:
         - name: RequestSize
           args:
-            maxSize: 52428800   # 50 * 1024 * 1024
+            maxSize: 52428800
+
       routes:
         - id: auth-service
           uri: lb://knowledge-planet-auth
@@ -28,7 +29,7 @@ spring:
             - Path=/api/auth/**, /api/user/**
           filters:
             - StripPrefix=1
-            - name: RequestRateLimiter
+            - name: RequestRateLimiter # Keep existing filters
               args:
                 redis-rate-limiter.replenishRate: 10
                 redis-rate-limiter.burstCapacity: 20
@@ -36,26 +37,28 @@ spring:
 
         - id: article-service
           uri: lb://knowledge-planet-article
+          # Update path if /api/planet/** is no longer used
           predicates:
-            - Path=/api/article/**, /api/planet/**
+            - Path=/api/article/** # Removed /api/planet/**
           filters:
             - StripPrefix=1
-            - name: RequestRateLimiter
+            - name: RequestRateLimiter # Keep existing filters
               args:
                 redis-rate-limiter.replenishRate: 20
                 redis-rate-limiter.burstCapacity: 40
                 key-resolver: "#{@ipKeyResolver}"
 
+        # *** ADDED: Route for Order Service ***
         - id: order-service
-          uri: lb://knowledge-planet-order
+          uri: lb://knowledge-planet-order # Route to the new order service
           predicates:
-            - Path=/api/order/**
+            - Path=/api/order/** # Define path prefix for order APIs
           filters:
-            - StripPrefix=1
-            - name: RequestRateLimiter
+            - StripPrefix=1 # Remove /api prefix before forwarding
+            - name: RequestRateLimiter # Apply rate limiting
               args:
-                redis-rate-limiter.replenishRate: 5
-                redis-rate-limiter.burstCapacity: 10
+                redis-rate-limiter.replenishRate: 10 # Adjust rates as needed
+                redis-rate-limiter.burstCapacity: 20
                 key-resolver: "#{@ipKeyResolver}"
 
       discovery:
@@ -63,20 +66,23 @@ spring:
           enabled: true
           lower-case-service-id: true
 
-      # 全局 CORS 配置
+      # Keep existing globalcors settings
       globalcors:
         cors-configurations:
-          # 对所有路径生效
           '[/**]':
-            allowedOrigins: "http://localhost:5173"   # 前端地址
+            allowedOrigins: "http://localhost:5173"
             allowedMethods: "GET,POST,PUT,DELETE,OPTIONS"
             allowedHeaders: "*"
             allowCredentials: true
             maxAge: 1800
+
+  # Keep existing redis settings
   redis:
     host: localhost
     port: 6379
 
-# 白名单路径
+# Keep existing whitelist settings (adjust if needed)
 whitelist:
-  urls: /api/auth/login,/api/auth/register,/api/planet/list
+  urls: /api/auth/login,/api/auth/register,/api/article/list # Example: /api/planet/list removed
+
+# Ensure bootstrap.yml is correctly configured for Nacos

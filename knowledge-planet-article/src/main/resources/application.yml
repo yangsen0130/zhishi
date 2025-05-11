@@ -1,36 +1,80 @@
-
 # src/main/resources/application.yml
 server:
   port: 9102
 
 spring:
   profiles:
-    active: local
+    active: local # Keep your active profile
   application:
     name: knowledge-planet-article
+  # --- Nacos Configuration ---
   config:
-    import: nacos:application.yaml
+    import: nacos:application.yaml # Assuming you have Nacos config setup
   cloud:
     nacos:
       discovery:
-        server-addr: 127.0.0.1:8848
+        server-addr: 127.0.0.1:8848 # Replace with your Nacos address
       config:
-        server-addr: 127.0.0.1:8848
+        server-addr: 127.0.0.1:8848 # Replace with your Nacos address
+        file-extension: yaml
+
+    # --- Spring Cloud Stream & RocketMQ Configuration (Consumer) ---
+    stream:
+      # RocketMQ Binder Configuration
+      rocketmq:
+        binder:
+          name-server: 127.0.0.1:9876 # !!! IMPORTANT: Use the SAME NameServer as the producer !!!
+          # Optional: AccessKey/SecretKey if ACL is enabled
+          # access-key: your_access_key
+          # secret-key: your_secret_key
+      # Stream Bindings Configuration
+      bindings:
+        # Input channel for payment success events (matches the listener bean name)
+        paymentSuccessInput-in-0: # Default naming convention: <functionName>-<in/out>-<index>
+          destination: payment-success-topic # MUST match the topic used by the order service producer
+          content-type: application/json
+          group: article-service-consumer-group # Consumer group name (IMPORTANT: Different services consuming same topic need different groups if broadcast, same group for load balancing)
+          consumer:
+            # Optional: Configure consumer properties
+            # max-reconsume-times: 5 # Max number of retries before sending to DLQ (if configured)
+            # consume-timeout: 15000 # Timeout in milliseconds for message processing
+            # enable-dlq: true # Enable Dead Letter Queue (requires DLQ setup in RocketMQ)
+            # dlq-name: DLG_article-service-consumer-group # Name for the DLQ topic
+            concurrency: 5 # Number of concurrent consumer threads (adjust based on load)
+
+
+  # --- Database Configuration ---
+  # Assuming user_article_permission table is in the same sharded DB as articles
+  # If it's in a separate DB, configure a different datasource bean specifically for it.
   datasource:
     driver-class-name: org.apache.shardingsphere.driver.ShardingSphereDriver
     url: jdbc:shardingsphere:classpath:shardingsphere-article-${spring.profiles.active}.yaml
-#  datasource:
-#    driver-class-name: com.mysql.cj.jdbc.Driver
-#    url: jdbc:mysql://localhost:3306/knowledge_planet?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
-#    username: root
-#    password: root
-#    druid:
-#      initial-size: 5
-#      min-idle: 5
-#      max-active: 20
-#      max-wait: 60000
 
-# Swagger配置
+# --- Mybatis Plus Configuration ---
+mybatis-plus:
+  mapper-locations: classpath:mapper/**/*.xml
+  # Add the new permission entity package if it's not already covered
+  type-aliases-package: com.example.common.entity, com.example.article.entity # Adjust if needed
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    db-config:
+      # id-type: auto # Keep your existing ID type strategy for articles
+      logic-delete-field: deleted # Keep if used for articles
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+
+rocketmq:
+  name-server: 127.0.0.1:9876
+# --- Minio Configuration (Keep as is) ---
+minio:
+  endpoint: http://localhost:9000
+  accessKey: minioadmin
+  secretKey: minioadmin
+  bucketName: knowledge-planet
+
+# --- Swagger Configuration (Keep as is) ---
 springdoc:
   swagger-ui:
     path: /swagger-ui.html
@@ -43,21 +87,8 @@ springdoc:
       paths-to-match: '/**'
       packages-to-scan: com.example.article.controller
 
-mybatis-plus:
-  mapper-locations: classpath:mapper/**/*.xml
-  type-aliases-package: com.example.common.entity
-  configuration:
-    map-underscore-to-camel-case: true
-    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
-  global-config:
-    db-config:
-#      id-type: auto
-      logic-delete-field: deleted
-      logic-delete-value: 1
-      logic-not-delete-value: 0
-
-minio:
-  endpoint: http://localhost:9000
-  accessKey: minioadmin
-  secretKey: minioadmin
-  bucketName: knowledge-planet
+logging:
+  level:
+    com.example.article: INFO
+    org.springframework.cloud.stream: INFO # Set to DEBUG for detailed stream logging
+    org.apache.rocketmq: WARN
