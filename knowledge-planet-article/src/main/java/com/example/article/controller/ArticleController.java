@@ -5,6 +5,7 @@ import com.example.article.service.ArticleService;
 import com.example.common.dto.ArticleCreateDTO;
 import com.example.common.response.Response;
 import com.example.common.vo.ArticleVO;
+import com.example.common.vo.ArticleTitleVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,10 +41,9 @@ public class ArticleController {
 
     // Renamed endpoint, removed planetId
     @GetMapping("/list")
-    @Operation(summary = "获取文章列表")
-    public Response<List<ArticleVO>> listArticles(@RequestHeader("X-User-Id") Long userId) {
-        // userId might be used for filtering or context, but not planet access
-        List<ArticleVO> articleList = articleService.listArticles(userId);
+    @Operation(summary = "获取文章列表(仅标题)", description = "获取所有文章的标题列表，无需登录")
+    public Response<List<ArticleTitleVO>> listArticles() {
+        List<ArticleTitleVO> articleList = articleService.listArticles();
         return Response.success(articleList);
     }
 }

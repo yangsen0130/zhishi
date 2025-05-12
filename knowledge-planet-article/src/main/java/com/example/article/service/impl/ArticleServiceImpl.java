@@ -15,6 +15,7 @@ import com.example.common.response.Code;
 import com.example.common.response.Response;
 import com.example.common.vo.ArticleVO;
 import com.example.common.vo.UserVO;
+import com.example.common.vo.ArticleTitleVO; // Added import
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -93,9 +94,10 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     }
 
     @Override
-    public List<ArticleVO> listArticles(Long userId) {
-        // Query active article list
+    public List<ArticleTitleVO> listArticles() { // Changed signature and return type, removed userId
+        // Query active article list, selecting only id and title
         List<Article> articles = this.list(new LambdaQueryWrapper<Article>()
+                .select(Article::getId, Article::getTitle) // Select only id and title
                 .eq(Article::getStatus, 1) // Only show active articles
                 .orderByDesc(Article::getCreateTime));
 
@@ -103,18 +105,9 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
             return new ArrayList<>();
         }
 
-        // Get distinct author IDs
-        List<Long> authorIds = articles.stream()
-                .map(Article::getAuthorId)
-                .distinct()
-                .collect(Collectors.toList());
-
-        // Fetch author information in bulk
-        Map<Long, UserVO> userMap = fetchAuthorDetails(authorIds);
-
-        // Convert to VO list
+        // Convert to ArticleTitleVO list
         return articles.stream()
-                .map(article -> convertToVO(article, userMap)) // Use the main converter
+                .map(article -> new ArticleTitleVO(article.getId(), article.getTitle())) // Direct conversion
                 .collect(Collectors.toList());
     }
 

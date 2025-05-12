@@ -4,6 +4,7 @@ package com.example.common.feign;
 import com.example.common.dto.ArticleCreateDTO;
 import com.example.common.response.Response;
 import com.example.common.vo.ArticleVO;
+import com.example.common.vo.ArticleTitleVO;
 // Removed: import com.example.common.vo.PlanetVO;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.*;
@@ -15,7 +16,7 @@ public interface ArticleFeignClient {
 
     // Renamed: getArticlesByPlanetId -> listArticles, removed planetId path variable
     @GetMapping("/article/list")
-    Response<List<ArticleVO>> listArticles(@RequestHeader("X-User-Id") Long userId); // Keep userId for potential access control
+    Response<List<ArticleTitleVO>> listArticles(); // Removed userId, changed return type
 
     @GetMapping("/article/detail/{articleId}")
     Response<ArticleVO> getArticleDetail(@PathVariable("articleId") Long articleId,

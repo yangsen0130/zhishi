@@ -7,6 +7,9 @@ spring:
     active: local # Keep your active profile
   application:
     name: knowledge-planet-article
+  redis:
+    host: 127.0.0.1
+    port: 6379
   # --- Nacos Configuration ---
   config:
     import: nacos:application.yaml # Assuming you have Nacos config setup

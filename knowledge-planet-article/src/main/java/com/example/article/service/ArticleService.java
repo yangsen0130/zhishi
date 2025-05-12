@@ -3,6 +3,7 @@ package com.example.article.service;
 
 import com.example.common.dto.ArticleCreateDTO;
 import com.example.common.vo.ArticleVO;
+import com.example.common.vo.ArticleTitleVO;
 
 import java.util.List;
 
@@ -24,9 +25,8 @@ public interface ArticleService {
     ArticleVO getArticleDetail(Long articleId, Long userId);
 
     /**
-     * 获取文章列表 (No longer planet-specific)
-     * @param userId ID of the user requesting the list (for potential context/filtering)
-     * @return List of Article VOs
+     * 获取文章列表 (No longer planet-specific, returns only titles)
+     * @return List of ArticleTitleVOs
      */
-    List<ArticleVO> listArticles(Long userId);
+    List<ArticleTitleVO> listArticles();
 }

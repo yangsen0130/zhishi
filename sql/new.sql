@@ -134,45 +134,6 @@ CREATE TABLE `user_3` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户表3';
 
 
--- ======================================================================
--- Step 1: Clean up old Planet related structures in Article Databases
--- ======================================================================
-
--- Connect to the first article database
-USE article_db_0;
-
--- Drop Planet tables if they exist
-DROP TABLE IF EXISTS `planet_0`;
-DROP TABLE IF EXISTS `planet_1`;
-DROP TABLE IF EXISTS `planet_2`;
-DROP TABLE IF EXISTS `planet_3`;
-
--- Alter Article tables to remove planet_id column and index
-ALTER TABLE `article_0` DROP COLUMN IF EXISTS `planet_id`, DROP INDEX IF EXISTS `idx_planet`;
-ALTER TABLE `article_1` DROP COLUMN IF EXISTS `planet_id`, DROP INDEX IF EXISTS `idx_planet`;
-ALTER TABLE `article_2` DROP COLUMN IF EXISTS `planet_id`, DROP INDEX IF EXISTS `idx_planet`;
-ALTER TABLE `article_3` DROP COLUMN IF EXISTS `planet_id`, DROP INDEX IF EXISTS `idx_planet`;
-
--- Connect to the second article database
-USE article_db_1;
-
--- Drop Planet tables if they exist
-DROP TABLE IF EXISTS `planet_0`;
-DROP TABLE IF EXISTS `planet_1`;
-DROP TABLE IF EXISTS `planet_2`;
-DROP TABLE IF EXISTS `planet_3`;
-
--- Alter Article tables to remove planet_id column and index
-ALTER TABLE `article_0` DROP COLUMN IF EXISTS `planet_id`, DROP INDEX IF EXISTS `idx_planet`;
-ALTER TABLE `article_1` DROP COLUMN IF EXISTS `planet_id`, DROP INDEX IF EXISTS `idx_planet`;
-ALTER TABLE `article_2` DROP COLUMN IF EXISTS `planet_id`, DROP INDEX IF EXISTS `idx_planet`;
-ALTER TABLE `article_3` DROP COLUMN IF EXISTS `planet_id`, DROP INDEX IF EXISTS `idx_planet`;
-
--- ======================================================================
--- Step 2: Recreate Article tables (Cleaned) in Article Databases
--- ======================================================================
-
--- Connect to the first article database
 USE article_db_0;
 
 CREATE TABLE `article_0` (

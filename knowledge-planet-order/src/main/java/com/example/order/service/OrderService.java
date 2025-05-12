@@ -1,6 +1,7 @@
 package com.example.order.service;
 
 import com.example.common.dto.PaymentSuccessEvent;
+import com.example.common.entity.Order;
 
 import java.math.BigDecimal;
 
@@ -34,4 +35,12 @@ public interface OrderService {
      * @param orderId The business ID of the order.
      */
     void processPaymentFailure(String orderId);
+    
+    /**
+     * 根据业务订单ID获取订单详情
+     *
+     * @param orderId 业务订单ID
+     * @return 订单实体
+     */
+    Order getOrderByOrderId(String orderId);
 }

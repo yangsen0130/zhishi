@@ -23,20 +23,19 @@ rules:
         databaseStrategy:
           standard:
             shardingColumn: id # Shard database based on article ID
-            shardingAlgorithmName: article-db-inline
+            shardingAlgorithmName: article-db-inline # Uses 'id'
         tableStrategy:
           standard:
             shardingColumn: id # Shard table based on article ID
             shardingAlgorithmName: article-table-inline
 
-      # *** ADDED: Sharding rule for 'user_article_permission' table ***
-      # Shard based on article_id to keep permissions physically close to the article data
+      # Sharding rule for 'user_article_permission' table
       user_article_permission:
         actualDataNodes: article-db-${0..1}.user_article_permission_${0..3} # Same topology as article
         databaseStrategy:
           standard:
             shardingColumn: article_id # Shard database based on article ID
-            shardingAlgorithmName: article-db-inline # Use same DB algorithm as article
+            shardingAlgorithmName: permission-db-inline # *** MODIFIED: Use new specific DB algorithm ***
         tableStrategy:
           standard:
             shardingColumn: article_id # Shard table based on article ID
@@ -45,12 +44,18 @@ rules:
 
     # Define Sharding Algorithms
     shardingAlgorithms:
-      # Database sharding algorithm (mod 2) - Used by both article and permission
+      # Database sharding algorithm (mod 2) - Used by 'article' table
       article-db-inline:
         type: INLINE
         props:
-          # For article table, uses 'id'. For permission table, uses 'article_id'.
-          algorithm-expression: article-db-${id % 2} # 'id' here refers to the respective shardingColumn
+          algorithm-expression: article-db-${id % 2} # Correct for 'article' table which uses 'id'
+
+      # *** ADDED: Database sharding algorithm for 'user_article_permission' (mod 2) ***
+      permission-db-inline: # New algorithm for permission table's database sharding
+        type: INLINE
+        props:
+          # Use 'article_id' which is the shardingColumn for this table's DB strategy
+          algorithm-expression: article-db-${article_id % 2}
 
       # Table sharding algorithm for 'article' (mod 4)
       article-table-inline:
@@ -58,7 +63,7 @@ rules:
         props:
           algorithm-expression: article_${id % 4}
 
-      # *** ADDED: Table sharding algorithm for 'user_article_permission' (mod 4) ***
+      # Table sharding algorithm for 'user_article_permission' (mod 4)
       permission-table-inline:
         type: INLINE
         props:

@@ -164,4 +164,24 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
             log.warn("Order {} (DB ID: {}) is not in PENDING state (current status: {}). Skipping failure processing.", orderId, order.getId(), order.getStatus());
         }
     }
+
+    @Override
+    public Order getOrderByOrderId(String orderId) {
+        log.info("获取订单信息, 订单ID: {}", orderId);
+        
+        if (orderId == null) {
+            throw new BusinessException(Code.PARAM_ERROR, "订单ID不能为空");
+        }
+        
+        // 使用业务ID查询订单
+        Order order = orderMapper.selectOne(new LambdaQueryWrapper<Order>()
+                .eq(Order::getOrderId, orderId));
+                
+        if (order == null) {
+            log.error("订单不存在, 订单ID: {}", orderId);
+            throw new BusinessException(Code.ORDER_NOT_EXIST);
+        }
+        
+        return order;
+    }
 }

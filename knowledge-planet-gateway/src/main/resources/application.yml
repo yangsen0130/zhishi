@@ -83,6 +83,4 @@ spring:
 
 # Keep existing whitelist settings (adjust if needed)
 whitelist:
-  urls: /api/auth/login,/api/auth/register,/api/article/list # Example: /api/planet/list removed
-
-# Ensure bootstrap.yml is correctly configured for Nacos
+  urls: /api/auth/login,/api/auth/register,/api/article/list
