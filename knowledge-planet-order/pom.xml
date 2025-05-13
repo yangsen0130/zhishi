@@ -17,7 +17,6 @@
     </properties>
 
     <dependencies>
-        <!-- Existing dependencies... -->
         <dependency>
             <groupId>com.example</groupId>
             <artifactId>knowledge-planet-common</artifactId>
@@ -69,21 +68,18 @@
             <artifactId>jackson-datatype-jsr310</artifactId>
         </dependency>
 
-        <!-- Alipay SDK -->
         <dependency>
             <groupId>com.alipay.sdk</groupId>
             <artifactId>alipay-sdk-java</artifactId>
             <version>${alipay.sdk.version}</version>
         </dependency>
 
-        <!-- FastJSON2 -->
         <dependency>
             <groupId>com.alibaba.fastjson2</groupId>
             <artifactId>fastjson2</artifactId>
             <version>${fastjson2.version}</version>
         </dependency>
 
-        <!-- *** ADDED: ShardingSphere JDBC Core *** -->
         <dependency>
             <groupId>org.apache.shardingsphere</groupId>
             <artifactId>shardingsphere-jdbc-core</artifactId>
@@ -91,7 +87,6 @@
 
     </dependencies>
 
-    <!-- build section remains the same -->
     <build>
         <plugins>
             <plugin>

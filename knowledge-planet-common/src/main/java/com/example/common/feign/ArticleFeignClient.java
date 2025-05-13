@@ -14,7 +14,6 @@ import java.util.List;
 @FeignClient(name = "knowledge-planet-article")
 public interface ArticleFeignClient {
 
-    // Renamed: getArticlesByPlanetId -> listArticles, removed planetId path variable
     @GetMapping("/article/list")
     Response<List<ArticleTitleVO>> listArticles(); // Removed userId, changed return type
 
@@ -25,17 +24,4 @@ public interface ArticleFeignClient {
     @PostMapping("/article/create")
     Response<ArticleVO> createArticle(@RequestBody ArticleCreateDTO articleDTO,
                                       @RequestHeader("X-User-Id") Long userId);
-
-    // Removed: getPlanetDetail method
-    // @GetMapping("/planet/detail/{planetId}")
-    // Response<PlanetVO> getPlanetDetail(@PathVariable("planetId") Long planetId);
-
-    // Removed: getPlanetList method
-    // @GetMapping("/planet/list")
-    // Response<List<PlanetVO>> getPlanetList();
-
-    // Removed: checkUserPlanetAccess method
-    // @GetMapping("/planet/access/{planetId}")
-    // Response<Boolean> checkUserPlanetAccess(@PathVariable("planetId") Long planetId,
-    //                                         @Req uestHeader("X-User-Id") Long userId);
 }

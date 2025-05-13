@@ -14,7 +14,6 @@ public class MessageOutbox {
     private Long id;
     private String messageId; // Unique ID for the message (e.g., UUID)
     private String aggregateType; // e.g., "Order"
-    // *** CHANGED: Type to Long to match Order.id ***
     private Long aggregateId; // ID of the aggregate root (order.id, Sharding Key)
     private String eventType; // e.g., "PaymentSuccessEvent"
     private String payload; // JSON representation of the event DTO
