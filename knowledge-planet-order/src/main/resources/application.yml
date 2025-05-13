@@ -32,18 +32,31 @@ spring:
     host: localhost
     port: 6379
   # --- Spring Cloud Stream & RocketMQ Configuration (Producer - Keep as before) ---
+
   cloud:
     stream:
-      rocketmq:
-        binder:
-          name-server: 127.0.0.1:9876
-      bindings:
+      default-binder: rocketmq                # 建议统一指定
+      binders:
+        rocketmq:
+          type: rocketmq
+          environment:
+            spring:
+              cloud:
+                stream:
+                  rocketmq:
+                    binder:
+                      name-server: 127.0.0.1:9876
+
+      bindings:                               # 通道的通用属性（与具体 binder 无关）
         paymentSuccessOutput-out-0:
           destination: payment-success-topic
           content-type: application/json
-          binder: rocketmq
-          producer:
-            group: order-service-producer-group
+
+      rocketmq:                               # ★ binder 专属配置（Producer / Consumer 组等）
+        bindings:
+          paymentSuccessOutput-out-0:         # 与上面 bindings 的 key 完全一致
+            producer:
+              group: order-service-producer-group
 
 # --- Knife4j Swagger Configuration (Keep as before) ---
 springdoc:

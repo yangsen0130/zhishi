@@ -81,10 +81,18 @@
             <artifactId>shardingsphere-jdbc-core</artifactId>
         </dependency>
 
-        <!-- *** ADDED: RocketMQ Stream Binder *** -->
+        <!-- Spring Cloud Stream RocketMQ Binder -->
         <dependency>
             <groupId>com.alibaba.cloud</groupId>
             <artifactId>spring-cloud-starter-stream-rocketmq</artifactId>
+        </dependency>
+
+        <!-- Apache RocketMQ Spring Boot Starter -->
+        <!-- This is needed for @RocketMQMessageListener -->
+        <dependency>
+            <groupId>org.apache.rocketmq</groupId>
+            <artifactId>rocketmq-spring-boot-starter</artifactId>
+            <version>${rocketmq-spring-boot-starter.version}</version> <!-- Ensure this property is defined in your parent POM or specify a version directly -->
         </dependency>
 
         <!-- Lombok -->
@@ -102,11 +110,6 @@
         <dependency>
             <groupId>com.fasterxml.jackson.datatype</groupId>
             <artifactId>jackson-datatype-jsr310</artifactId> <!-- For LocalDateTime -->
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.rocketmq</groupId>
-            <artifactId>rocketmq-spring-boot-starter</artifactId>
         </dependency>
     </dependencies>
 

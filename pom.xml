@@ -75,11 +75,11 @@
         <scope>import</scope>
       </dependency>
 
-      <dependency>
-        <groupId>org.apache.rocketmq</groupId>
-        <artifactId>rocketmq-spring-boot-starter</artifactId>
-        <version>${rocketmq-spring-boot-starter.version}</version>
-      </dependency>
+<!--      <dependency>-->
+<!--        <groupId>org.apache.rocketmq</groupId>-->
+<!--        <artifactId>rocketmq-spring-boot-starter</artifactId>-->
+<!--        <version>${rocketmq-spring-boot-starter.version}</version>-->
+<!--      </dependency>-->
 
       <!-- Spring Cloud Stream RocketMQ Binder -->
       <dependency>
