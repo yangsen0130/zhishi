@@ -8,6 +8,7 @@ import com.example.article.mapper.ArticleMapper;
 import com.example.article.service.ArticleService;
 import com.example.article.service.PermissionService;
 import com.example.common.dto.ArticleCreateDTO;
+import com.example.common.dto.ArticleUpdateDTO;
 import com.example.common.entity.Article;
 import com.example.common.exception.BusinessException;
 import com.example.common.feign.AuthFeignClient;
@@ -64,6 +65,73 @@ public class ArticleServiceImpl implements ArticleService { // Removed "extends 
             vo.setHasFullAccess(true); // 作者总是有完整权限
         }
         return vo;
+    }
+
+    @Override
+    public ArticleVO updateArticle(Long articleId, ArticleUpdateDTO articleUpdateDTO, Long userId) {
+        Article article = articleMapper.selectById(articleId);
+        if (article == null || article.getStatus() != 1) {
+            throw new BusinessException(Code.ARTICLE_NOT_EXIST);
+        }
+
+        // Authorization: Only the author can update the article
+        if (!article.getAuthorId().equals(userId)) {
+            log.warn("User {} attempted to update article {} owned by {}", userId, articleId, article.getAuthorId());
+            throw new BusinessException(Code.ARTICLE_UNAUTHORIZED_OPERATION, "无权修改此文章");
+        }
+
+        // Update fields from DTO
+        // Consider which fields are updatable and how to handle partial updates if needed
+        if (articleUpdateDTO.getTitle() != null) {
+            article.setTitle(articleUpdateDTO.getTitle());
+        }
+        if (articleUpdateDTO.getContent() != null) {
+            article.setContent(articleUpdateDTO.getContent());
+        }
+        if (articleUpdateDTO.getPrice() != null) {
+            article.setPrice(articleUpdateDTO.getPrice());
+        }
+        // article.setUpdateTime(LocalDateTime.now()); // If manually managing updateTime
+
+        int updated = articleMapper.updateById(article);
+        if (updated <= 0) {
+            log.error("Failed to update article with ID: {} by user: {}", articleId, userId);
+            throw new BusinessException(Code.SYSTEM_ERROR, "修改文章失败");
+        }
+        log.info("Article with ID: {} updated by user: {}", articleId, userId);
+
+        // Fetch fresh data to return, including author details
+        // Or, if convertToVO can work with the current 'article' object and only needs to fetch author details:
+        return convertToVO(article, fetchAuthorDetails(Collections.singletonList(article.getAuthorId())));
+    }
+
+    @Override
+    public void deleteArticle(Long articleId, Long userId) {
+        Article article = articleMapper.selectById(articleId);
+        if (article == null) {
+            // If article doesn't exist, arguably it's already 'deleted' from this user's perspective
+            // Or throw ARTICLE_NOT_EXIST if strictness is required.
+            log.warn("Attempt to delete non-existent article with ID: {} by user: {}", articleId, userId);
+            // Not throwing an error here to make the operation idempotent from client's view if article is gone.
+            return; 
+        }
+
+        // Authorization: Only the author can delete the article
+        if (!article.getAuthorId().equals(userId)) {
+            log.warn("User {} attempted to delete article {} owned by {}", userId, articleId, article.getAuthorId());
+            throw new BusinessException(Code.ARTICLE_UNAUTHORIZED_OPERATION, "无权删除此文章");
+        }
+
+        // Perform hard delete. For soft delete, you would update a 'status' field.
+        // e.g., article.setStatus(0); articleMapper.updateById(article);
+        int deleted = articleMapper.deleteById(articleId);
+        if (deleted <= 0) {
+            // This might happen if the article was deleted by another process between the check and the delete operation
+            log.error("Failed to delete article with ID: {} by user: {}. It might have been already deleted.", articleId, userId);
+            throw new BusinessException(Code.SYSTEM_ERROR, "删除文章失败");
+        }
+        log.info("Article with ID: {} deleted by user: {}", articleId, userId);
+        // No content to return for a delete operation
     }
 
     @Override

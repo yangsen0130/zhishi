@@ -3,6 +3,7 @@ package com.example.article.controller;
 
 import com.example.article.service.ArticleService;
 import com.example.common.dto.ArticleCreateDTO;
+import com.example.common.dto.ArticleUpdateDTO;
 import com.example.common.response.Response;
 import com.example.common.vo.ArticleVO;
 import com.example.common.vo.ArticleTitleVO;
@@ -28,6 +29,23 @@ public class ArticleController {
         // userId is now the authorId implicitly
         ArticleVO articleVO = articleService.createArticle(articleDTO, userId);
         return Response.success(articleVO);
+    }
+
+    @PutMapping("/update/{articleId}")
+    @Operation(summary = "修改文章")
+    public Response<ArticleVO> updateArticle(@PathVariable Long articleId,
+                                             @RequestBody ArticleUpdateDTO articleUpdateDTO,
+                                             @RequestHeader("X-User-Id") Long userId) {
+        ArticleVO articleVO = articleService.updateArticle(articleId, articleUpdateDTO, userId);
+        return Response.success(articleVO);
+    }
+
+    @DeleteMapping("/delete/{articleId}")
+    @Operation(summary = "删除文章")
+    public Response<Void> deleteArticle(@PathVariable Long articleId,
+                                        @RequestHeader("X-User-Id") Long userId) {
+        articleService.deleteArticle(articleId, userId);
+        return Response.success(null);
     }
 
     @GetMapping("/detail/{articleId}")

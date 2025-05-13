@@ -36,6 +36,7 @@ public enum Code {
     // 文章相关异常
     ARTICLE_NOT_EXIST(5000, "文章不存在或已删除"),
     ARTICLE_ACCESS_DENIED(5001, "无权访问此文章"),
+    ARTICLE_UNAUTHORIZED_OPERATION(5002, "无权操作此文章"),
 
     // 文件相关异常
     FILE_EMPTY(6000, "上传文件不能为空"),
