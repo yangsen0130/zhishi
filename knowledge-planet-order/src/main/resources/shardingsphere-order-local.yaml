@@ -5,16 +5,13 @@ dataSources:
     driverClassName: com.mysql.cj.jdbc.Driver
     jdbcUrl: jdbc:mysql://localhost:3306/order_db_0?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
     username: root
-    password: root # Replace with your password
-    # Add HikariCP properties if needed
-    # maximumPoolSize: 10
-    # minimumIdle: 5
+    password: root
   order-db-1:
     dataSourceClassName: com.zaxxer.hikari.HikariDataSource
     driverClassName: com.mysql.cj.jdbc.Driver
     jdbcUrl: jdbc:mysql://localhost:3306/order_db_1?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
     username: root
-    password: root # Replace with your password
+    password: root
 
 # Define the sharding rules
 rules:
@@ -22,58 +19,68 @@ rules:
     tables:
       # Sharding rule for the 'orders' table
       orders:
-        actualDataNodes: order-db-${0..1}.orders_${0..3} # 2 databases, 4 tables per database
+        actualDataNodes: order-db-${0..1}.orders_${0..3}
         databaseStrategy:
           standard:
-            shardingColumn: id # Shard database based on the order's primary key (Snowflake ID)
-            shardingAlgorithmName: order-db-inline
+            shardingColumn: id
+            shardingAlgorithmName: orders-db-inline # Renamed for clarity, specific to orders
         tableStrategy:
           standard:
-            shardingColumn: id # Shard table based on the order's primary key (Snowflake ID)
-            shardingAlgorithmName: order-table-inline
-        # Key generation strategy (optional if using MybatisPlus ASSIGN_ID)
+            shardingColumn: id
+            shardingAlgorithmName: orders-table-inline # Renamed for clarity, specific to orders
         # keyGenerateStrategy:
         #   column: id
-        #   keyGeneratorName: snowflake # Use ShardingSphere's snowflake
+        #   keyGeneratorName: snowflake
 
       # Sharding rule for the 'message_outbox' table
-      # Shard based on aggregate_id (which is the order's Snowflake ID) to keep order and its outbox message in the same DB transactionally
       message_outbox:
-        actualDataNodes: order-db-${0..1}.message_outbox_${0..3} # Same topology as orders
+        actualDataNodes: order-db-${0..1}.message_outbox_${0..3}
         databaseStrategy:
           standard:
-            shardingColumn: aggregate_id # Shard database based on the order's ID
-            shardingAlgorithmName: order-db-inline # Use the same DB algorithm as orders
+            shardingColumn: aggregate_id
+            shardingAlgorithmName: message-outbox-db-inline # New algorithm for message_outbox DB sharding
         tableStrategy:
           standard:
-            shardingColumn: aggregate_id # Shard table based on the order's ID
-            shardingAlgorithmName: order-table-inline # Use the same table algorithm as orders
-        # No keyGenerateStrategy needed for message_outbox as its PK 'id' is AUTO_INCREMENT
+            shardingColumn: aggregate_id
+            shardingAlgorithmName: message-outbox-table-inline # New algorithm for message_outbox table sharding
 
     # Define Sharding Algorithms
     shardingAlgorithms:
-      # Database sharding algorithm (mod 2)
-      order-db-inline:
+      # --- Algorithms for 'orders' table ---
+      orders-db-inline:
         type: INLINE
         props:
-          algorithm-expression: order-db-${id % 2} # Use 'id' for orders table sharding key
-          # For message_outbox, ShardingSphere uses the shardingColumn 'aggregate_id' with this algorithm name
-          # So, the expression effectively becomes order-db-${aggregate_id % 2}
+          algorithm-expression: order-db-${id % 2} # Uses 'id'
 
-      # Table sharding algorithm (mod 4)
-      order-table-inline:
+      orders-table-inline:
         type: INLINE
         props:
-          algorithm-expression: orders_${id % 4} # For orders table
-          # For message_outbox, it becomes message_outbox_${aggregate_id % 4}
+          algorithm-expression: orders_${id % 4} # Uses 'id' and 'orders_' prefix
 
-        # Define Key Generators (Optional if using MybatisPlus ASSIGN_ID)
-        # keyGenerators:
-        #   snowflake:
-        #     type: SNOWFLAKE
-        # props:
-        #   worker-id: 123 # Ensure unique worker-id per instance
+      # --- Algorithms for 'message_outbox' table ---
+      message-outbox-db-inline:
+        type: INLINE
+        props:
+          # This algorithm now correctly uses 'aggregate_id' in its expression logic
+          # The actual expression still refers to the sharding value passed,
+          # but we name the algorithm to make it clear it's for aggregate_id.
+          # ShardingSphere takes the value of 'aggregate_id' (because shardingColumn is aggregate_id)
+          # and the INLINE algorithm uses that value in place of the placeholder.
+          # To be absolutely explicit with INLINE, the placeholder in the expression should match the shardingColumn.
+          algorithm-expression: order-db-${aggregate_id % 2} # Correctly use aggregate_id
+
+      message-outbox-table-inline:
+        type: INLINE
+        props:
+          # Same as above, using aggregate_id and correct table prefix
+          algorithm-expression: message_outbox_${aggregate_id % 4} # Correctly use aggregate_id and prefix
+
+    # keyGenerators:
+    #   snowflake:
+    #     type: SNOWFLAKE
+    # props:
+    #   worker-id: 123
 
 # Define global properties
 props:
-  sql-show: true # Log executed SQL statements
+  sql-show: true

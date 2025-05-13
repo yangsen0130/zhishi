@@ -6,20 +6,21 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.article.mapper.ArticleMapper;
 import com.example.article.service.ArticleService;
-import com.example.article.service.PermissionService; // *** ADDED ***
+import com.example.article.service.PermissionService;
 import com.example.common.dto.ArticleCreateDTO;
 import com.example.common.entity.Article;
-import com.example.common.exception.BusinessException;
+import com.example.common.exception.BusinessException; // 仍然需要用于文章不存在等情况
 import com.example.common.feign.AuthFeignClient;
 import com.example.common.response.Code;
 import com.example.common.response.Response;
 import com.example.common.vo.ArticleVO;
 import com.example.common.vo.UserVO;
-import com.example.common.vo.ArticleTitleVO; // Added import
+import com.example.common.vo.ArticleTitleVO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal; // 确保导入
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -34,20 +35,19 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     private AuthFeignClient authFeignClient;
 
     @Autowired
-    private PermissionService permissionService; // *** ADDED: Inject PermissionService ***
+    private PermissionService permissionService;
 
-    // *** Assume Article entity has a 'isPaid' boolean field, or similar mechanism ***
-    // Example: Add `private Boolean isPaid = true;` to Article.java entity
+    @Autowired
+    private ArticleMapper articleMapper;
 
     @Override
     public ArticleVO createArticle(ArticleCreateDTO articleDTO, Long authorId) {
-        // Create article
         Article article = new Article();
         article.setTitle(articleDTO.getTitle());
         article.setContent(articleDTO.getContent());
         article.setAuthorId(authorId);
-        article.setStatus(1); // 1 = Active/Normal
-        // article.setIsPaid(true); // Example: Mark as requiring payment
+        article.setStatus(1);
+        article.setPrice(articleDTO.getPrice());
 
         boolean saved = this.save(article);
         if (!saved) {
@@ -55,77 +55,85 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
             throw new BusinessException(Code.SYSTEM_ERROR, "创建文章失败");
         }
         log.info("Article created with ID: {} by author: {}", article.getId(), authorId);
-        return convertToVO(article, null); // Pass null for userMap initially
+
+        // 对于新创建的文章，作者拥有完整权限
+        ArticleVO vo = convertToVO(article, fetchAuthorDetails(Collections.singletonList(authorId)));
+        if (vo != null) {
+            vo.setHasFullAccess(true); // 作者总是有完整权限
+        }
+        return vo;
     }
 
     @Override
     public ArticleVO getArticleDetail(Long articleId, Long userId) {
-        Article article = this.getById(articleId);
+        Article article = articleMapper.selectById(articleId);
         if (article == null || article.getStatus() != 1) {
+            // 对于文章不存在的情况，仍然抛出业务异常
             throw new BusinessException(Code.ARTICLE_NOT_EXIST);
         }
 
-        // --- Access Control Check ---
-        // 1. Is the user the author? Authors always have access.
-        boolean isAuthor = article.getAuthorId().equals(userId);
+        ArticleVO articleVO = new ArticleVO();
+        BeanUtil.copyProperties(article, articleVO); // 复制 id, title, price 等基础信息
 
-        // 2. Does the article require payment/permission? (Assume a field like 'isPaid')
-        // boolean requiresPermission = article.getIsPaid(); // Example check
-        boolean requiresPermission = true; // Let's assume all articles require permission for now
-
-        // 3. If it requires permission and user is not the author, check permission table
-        boolean hasPermission = false;
-        if (!isAuthor && requiresPermission) {
-            hasPermission = permissionService.hasPermission(userId, articleId);
-        }
-
-        // 4. Deny access if required permission is missing
-        if (!isAuthor && requiresPermission && !hasPermission) {
-            log.warn("Access denied for userId: {} to articleId: {}", userId, articleId);
-            throw new BusinessException(Code.ARTICLE_ACCESS_DENIED, "您需要购买才能阅读此文章");
-        }
-
-        log.info("Access granted for userId: {} to articleId: {}", userId, articleId);
-
-        // Fetch author details for the VO
+        // 获取作者信息并设置
         Map<Long, UserVO> userMap = fetchAuthorDetails(Collections.singletonList(article.getAuthorId()));
+        if (userMap.containsKey(article.getAuthorId())) {
+            articleVO.setAuthorName(userMap.get(article.getAuthorId()).getUsername());
+        } else {
+            articleVO.setAuthorName("未知作者");
+        }
+        articleVO.setAuthorId(article.getAuthorId()); // 确保 authorId 也被设置
 
-        return convertToVO(article, userMap);
+        boolean isAuthor = article.getAuthorId().equals(userId);
+        // 假设价格大于0的文章需要权限检查 (或者有其他字段标记是否付费)
+        boolean requiresPermission = article.getPrice() != null && article.getPrice().compareTo(BigDecimal.ZERO) > 0;
+
+        if (isAuthor || (requiresPermission && permissionService.hasPermission(userId, articleId)) || !requiresPermission) {
+            // 情况1: 用户是作者
+            // 情况2: 文章需要权限，且用户有权限
+            // 情况3: 文章不需要权限 (免费文章)
+            articleVO.setHasFullAccess(true);
+            // content 已经被 BeanUtil.copyProperties 复制，这里无需额外操作
+            log.info("Full access granted for userId: {} to articleId: {}", userId, articleId);
+        } else {
+            // 用户不是作者，文章需要权限，但用户没有权限
+            articleVO.setHasFullAccess(false);
+            articleVO.setContent(null); // 清空文章内容
+            log.warn("Partial access for userId: {}. ArticleId: {}. User needs to purchase or gain permission.", userId, articleId);
+        }
+
+        return articleVO;
     }
 
     @Override
-    public List<ArticleTitleVO> listArticles() { // Changed signature and return type, removed userId
-        // Query active article list, selecting only id and title
-        List<Article> articles = this.list(new LambdaQueryWrapper<Article>()
-                .select(Article::getId, Article::getTitle) // Select only id and title
-                .eq(Article::getStatus, 1) // Only show active articles
+    public List<ArticleTitleVO> listArticles() {
+        List<Article> articles = articleMapper.selectList(new LambdaQueryWrapper<Article>()
+                .select(Article::getId, Article::getTitle)
+                .eq(Article::getStatus, 1)
                 .orderByDesc(Article::getCreateTime));
 
         if (articles.isEmpty()) {
             return new ArrayList<>();
         }
 
-        // Convert to ArticleTitleVO list
         return articles.stream()
-                .map(article -> new ArticleTitleVO(article.getId(), article.getTitle())) // Direct conversion
+                .map(article -> new ArticleTitleVO(article.getId(), article.getTitle()))
                 .collect(Collectors.toList());
     }
 
-    // Helper to fetch author details
     private Map<Long, UserVO> fetchAuthorDetails(List<Long> authorIds) {
         Map<Long, UserVO> userMap = new java.util.HashMap<>();
         if (authorIds == null || authorIds.isEmpty()) {
             return userMap;
         }
-        // Consider a bulk fetch method in AuthFeignClient if available
-        // For now, fetch individually
         for (Long authorId : authorIds) {
+            if (authorId == null) continue;
             try {
                 Response<UserVO> userResponse = authFeignClient.getUserInfo(authorId);
                 if (userResponse != null && userResponse.getCode() == 200 && userResponse.getData() != null) {
                     userMap.put(authorId, userResponse.getData());
                 } else {
-                    log.warn("Could not fetch user info for authorId: {}", authorId);
+                    log.warn("Could not fetch user info for authorId: {}. Response: {}", authorId, userResponse);
                 }
             } catch (Exception e) {
                 log.error("Error fetching user info for authorId: {}", authorId, e);
@@ -134,33 +142,35 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         return userMap;
     }
 
-    // Helper to convert Article to ArticleVO, using pre-fetched author map
+    // convertToVO 辅助方法现在主要由 BeanUtil.copyProperties 完成，
+    // 并且权限相关的逻辑移到了 getArticleDetail 中。
+    // 如果 ArticleVO 和 Article 字段完全一致，此方法可以简化或内联。
+    // 这里保留是为了清晰地处理作者名称的获取。
     private ArticleVO convertToVO(Article article, Map<Long, UserVO> userMap) {
         if (article == null) return null;
         ArticleVO vo = new ArticleVO();
-        BeanUtil.copyProperties(article, vo);
+        BeanUtil.copyProperties(article, vo); // price 字段也会被复制
 
-        // Set author name from the fetched map
-        if (userMap != null && userMap.containsKey(article.getAuthorId())) {
-            vo.setAuthorName(userMap.get(article.getAuthorId()).getUsername());
-        } else if (userMap == null) { // Fetch individually if map not provided (e.g., single detail view)
-            try {
-                Response<UserVO> userResponse = authFeignClient.getUserInfo(article.getAuthorId());
-                if (userResponse != null && userResponse.getCode() == 200 && userResponse.getData() != null) {
-                    vo.setAuthorName(userResponse.getData().getUsername());
-                } else {
+        if (article.getAuthorId() != null) {
+            if (userMap != null && userMap.containsKey(article.getAuthorId())) {
+                vo.setAuthorName(userMap.get(article.getAuthorId()).getUsername());
+            } else {
+                try {
+                    Response<UserVO> userResponse = authFeignClient.getUserInfo(article.getAuthorId());
+                    if (userResponse != null && userResponse.getCode() == 200 && userResponse.getData() != null) {
+                        vo.setAuthorName(userResponse.getData().getUsername());
+                    } else {
+                        vo.setAuthorName("未知作者");
+                        log.warn("Could not fetch user info for authorId: {} in convertToVO. Response: {}", article.getAuthorId(), userResponse);
+                    }
+                } catch (Exception e) {
                     vo.setAuthorName("未知作者");
-                    log.warn("Could not fetch user info for authorId: {} in convertToVO", article.getAuthorId());
+                    log.error("Error fetching user info for authorId: {} in convertToVO", article.getAuthorId(), e);
                 }
-            } catch (Exception e) {
-                vo.setAuthorName("未知作者");
-                log.error("Error fetching user info for authorId: {} in convertToVO", article.getAuthorId(), e);
             }
+        } else {
+            vo.setAuthorName("未知作者");
         }
-        else {
-            vo.setAuthorName("未知作者"); // Author not found in map
-        }
-
         return vo;
     }
 }

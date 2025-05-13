@@ -36,11 +36,12 @@ spring:
     stream:
       rocketmq:
         binder:
-          name-server: your-rocketmq-nameserver-addr:9876 # !!! IMPORTANT: Replace !!!
+          name-server: 127.0.0.1:9876
       bindings:
         paymentSuccessOutput-out-0:
           destination: payment-success-topic
           content-type: application/json
+          binder: rocketmq
           producer:
             group: order-service-producer-group
 

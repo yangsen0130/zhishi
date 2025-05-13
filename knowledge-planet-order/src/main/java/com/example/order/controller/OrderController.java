@@ -25,7 +25,7 @@ public class OrderController {
 
     @Autowired
     private OrderService orderService;
-    
+
     @Autowired
     private PaymentService paymentService;
 
@@ -46,7 +46,7 @@ public class OrderController {
 
         return Response.success(result);
     }
-    
+
     @GetMapping("/pay")
     @Operation(summary = "跳转到支付宝支付")
     public void payWithAlipay(
@@ -55,10 +55,10 @@ public class OrderController {
         try {
             // 从数据库获取订单详情
             Order order = orderService.getOrderByOrderId(orderId);
-            
+
             // 构建支付标题
             String subject = "知识星球文章-" + order.getArticleId() + "购买";
-            
+
             // 调用支付宝支付
             paymentService.createAlipayForm(orderId, subject, order.getAmount(), response);
         } catch (Exception e) {
@@ -77,14 +77,14 @@ public class OrderController {
     public String alipayReturn(HttpServletRequest request) {
         log.info("接收到支付宝同步回调");
         Map<String, Object> result = paymentService.handleAlipayReturn(request);
-        
+
         // 构建简单的HTML响应，显示支付结果
         StringBuilder htmlResponse = new StringBuilder();
         htmlResponse.append("<!DOCTYPE html>")
                     .append("<html><head><meta charset=\"utf-8\"><title>支付结果</title></head>")
                     .append("<body style=\"text-align:center;padding:50px;\">")
                     .append("<h1>").append(result.get("message")).append("</h1>");
-        
+
         if (result.containsKey("orderId")) {
             htmlResponse.append("<p>订单号: ").append(result.get("orderId")).append("</p>");
         }
@@ -94,10 +94,10 @@ public class OrderController {
         if (result.containsKey("totalAmount")) {
             htmlResponse.append("<p>支付金额: ").append(result.get("totalAmount")).append("</p>");
         }
-        
+
         htmlResponse.append("<a href=\"/\">返回首页</a>")
                     .append("</body></html>");
-        
+
         return htmlResponse.toString();
     }
 
@@ -106,7 +106,7 @@ public class OrderController {
     @ResponseBody
     public String alipayNotify(HttpServletRequest request) {
         log.info("接收到支付宝异步通知");
-        
+
         // 将请求参数转换为Map
         Map<String, String> params = new HashMap<>();
         Map<String, String[]> requestParams = request.getParameterMap();
@@ -118,33 +118,41 @@ public class OrderController {
             }
             params.put(name, valueStr);
         }
-        
+
         // 处理异步通知
         return paymentService.handleAlipayNotify(params);
     }
 
-    // 原有模拟支付接口保留，但标记为不推荐使用
-    @PostMapping("/pay/success/{orderId}")
-    @Operation(summary = "模拟支付成功回调（不推荐使用，使用支付宝支付）")
-    public Response<Void> simulatePaymentSuccess(
+
+    /**
+     * 模拟支付成功回调 - 仅限开发/测试环境使用。
+     * 这个接口会直接触发支付成功后的业务逻辑，包括更新订单状态和发送消息到MQ。
+     *
+     * @param orderId 业务订单ID
+     * @return Response
+     */
+    @PostMapping("/dev/simulate-payment-success/{orderId}")
+    @Operation(summary = "模拟支付成功回调 (仅限开发/测试环境)",
+            description = "此接口用于在开发或测试环境中模拟支付成功场景，触发后续业务流程。请勿在生产环境暴露或使用。")
+    public Response<String> simulatePaymentSuccess(
             @Parameter(description = "业务订单ID", required = true) @PathVariable String orderId) {
-        log.info("Simulating successful payment for orderId: {}", orderId);
+
         try {
             boolean success = orderService.processPaymentSuccess(orderId);
             if (success) {
-                return Response.success();
+                log.info("Payment success simulation processed for orderId: {}. Order status updated and message queued.", orderId);
+                return Response.success("模拟支付成功处理完成，订单 " + orderId + " 已标记为支付成功，相关消息已进入队列。");
             } else {
-                // This case might mean it was already processed or another issue occurred
-                log.warn("Payment processing for order {} did not result in a state change, possibly already processed.", orderId);
-                // Still return success to the caller as the desired end state (paid) might be achieved
-                return Response.success();
+                log.warn("Payment success simulation for order {} did not result in a state change, possibly already processed or an issue occurred.", orderId);
+                return Response.success("模拟支付成功请求已收到，但订单 " + orderId + " 状态未发生改变（可能已处理或存在问题）。");
             }
         } catch (Exception e) {
-            log.error("Error simulating payment success for orderId: {}", orderId, e);
-            // Convert specific BusinessExceptions or return a generic error
-            return Response.error(500, "处理支付成功回调时出错: " + e.getMessage());
+            log.error("Error simulating payment success for orderId: {}. Error: {}", orderId, e.getMessage(), e);
+            // 将具体的业务异常或系统异常信息返回给调用者
+            return Response.error(500, "模拟支付成功处理时出错: " + e.getMessage());
         }
     }
+
 
     @PostMapping("/pay/fail/{orderId}")
     @Operation(summary = "模拟支付失败回调（不推荐使用，使用支付宝支付）")

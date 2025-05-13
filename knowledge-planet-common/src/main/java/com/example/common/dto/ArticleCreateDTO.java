@@ -3,9 +3,12 @@ package com.example.common.dto;
 
 import lombok.Data;
 
+import java.math.BigDecimal;
+
 @Data
 public class ArticleCreateDTO {
     private String title;
     private String content;
-    // Removed: private Long planetId;
+    private BigDecimal price;
+
 }

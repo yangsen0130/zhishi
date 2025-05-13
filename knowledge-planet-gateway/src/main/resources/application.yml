@@ -83,4 +83,4 @@ spring:
 
 # Keep existing whitelist settings (adjust if needed)
 whitelist:
-  urls: /api/auth/login,/api/auth/register,/api/article/list
+  urls: /api/auth/login,/api/auth/register,/api/article/list,/api/order/pay,/api/order/alipay/return,/api/order/alipay/notify
