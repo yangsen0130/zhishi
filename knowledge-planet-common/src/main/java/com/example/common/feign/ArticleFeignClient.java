@@ -2,6 +2,7 @@
 package com.example.common.feign;
 
 import com.example.common.dto.ArticleCreateDTO;
+import com.example.common.dto.ArticleUpdateDTO; // Added import
 import com.example.common.response.Response;
 import com.example.common.vo.ArticleVO;
 import com.example.common.vo.ArticleTitleVO;
@@ -27,4 +28,13 @@ public interface ArticleFeignClient {
     @PostMapping("/article/create")
     Response<ArticleVO> createArticle(@RequestBody ArticleCreateDTO articleDTO,
                                       @RequestHeader("X-User-Id") Long userId);
+
+    @PutMapping("/article/update/{articleId}") // Added new method
+    Response<ArticleVO> updateArticle(@PathVariable("articleId") Long articleId,
+                                      @RequestBody ArticleUpdateDTO articleUpdateDTO,
+                                      @RequestHeader("X-User-Id") Long userId);
+
+    @DeleteMapping("/article/delete/{articleId}") // Added new method
+    Response<Void> deleteArticle(@PathVariable("articleId") Long articleId,
+                                 @RequestHeader("X-User-Id") Long userId);
 }
