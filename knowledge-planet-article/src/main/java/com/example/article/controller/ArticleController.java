@@ -64,4 +64,11 @@ public class ArticleController {
         List<ArticleTitleVO> articleList = articleService.listArticles();
         return Response.success(articleList);
     }
+    
+    @GetMapping("/list/author/{authorId}")
+    @Operation(summary = "获取指定用户发表的所有文章标题列表", description = "获取指定用户发表的所有文章的标题列表")
+    public Response<List<ArticleTitleVO>> getArticleTitlesByAuthor(@PathVariable Long authorId) {
+        List<ArticleTitleVO> articleList = articleService.getArticleTitlesByAuthor(authorId);
+        return Response.success(articleList);
+    }
 }

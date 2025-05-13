@@ -13,4 +13,7 @@ public interface ArticleMapper extends BaseMapper<Article> {
     // Add this method
     @Select("SELECT id, title FROM article WHERE status = #{status} ORDER BY create_time DESC")
     List<Article> selectIdAndTitleByStatusOrderByCreateTimeDesc(@Param("status") Integer status);
+    
+    @Select("SELECT id, title FROM article WHERE author_id = #{authorId} AND status = #{status} ORDER BY create_time DESC")
+    List<Article> selectIdAndTitleByAuthorIdAndStatusOrderByCreateTimeDesc(@Param("authorId") Long authorId, @Param("status") Integer status);
 }

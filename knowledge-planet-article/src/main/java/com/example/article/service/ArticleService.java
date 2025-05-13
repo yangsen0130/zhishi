@@ -46,4 +46,11 @@ public interface ArticleService {
      * @return List of ArticleTitleVOs
      */
     List<ArticleTitleVO> listArticles();
+    
+    /**
+     * 获取指定用户发表的所有文章标题列表
+     * @param authorId The ID of the author
+     * @return List of article titles published by the specified user
+     */
+    List<ArticleTitleVO> getArticleTitlesByAuthor(Long authorId);
 }

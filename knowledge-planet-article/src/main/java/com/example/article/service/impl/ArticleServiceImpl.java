@@ -188,6 +188,26 @@ public class ArticleServiceImpl implements ArticleService { // Removed "extends 
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public List<ArticleTitleVO> getArticleTitlesByAuthor(Long authorId) {
+        if (authorId == null) {
+            log.warn("Attempt to get articles with null authorId");
+            return new ArrayList<>();
+        }
+
+        List<Article> articles = articleMapper.selectIdAndTitleByAuthorIdAndStatusOrderByCreateTimeDesc(authorId, 1);
+        
+        if (articles.isEmpty()) {
+            log.info("No articles found for authorId: {}", authorId);
+            return new ArrayList<>();
+        }
+        
+        log.info("Found {} articles for authorId: {}", articles.size(), authorId);
+        return articles.stream()
+                .map(article -> new ArticleTitleVO(article.getId(), article.getTitle()))
+                .collect(Collectors.toList());
+    }
+
     private Map<Long, UserVO> fetchAuthorDetails(List<Long> authorIds) {
         Map<Long, UserVO> userMap = new java.util.HashMap<>();
         if (authorIds == null || authorIds.isEmpty()) {

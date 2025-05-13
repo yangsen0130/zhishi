@@ -17,6 +17,9 @@ public interface ArticleFeignClient {
     @GetMapping("/article/list")
     Response<List<ArticleTitleVO>> listArticles(); // Removed userId, changed return type
 
+    @GetMapping("/article/list/author/{authorId}")
+    Response<List<ArticleTitleVO>> getArticleTitlesByAuthor(@PathVariable("authorId") Long authorId);
+
     @GetMapping("/article/detail/{articleId}")
     Response<ArticleVO> getArticleDetail(@PathVariable("articleId") Long articleId,
                                          @RequestHeader("X-User-Id") Long userId); // Keep userId for potential access control
