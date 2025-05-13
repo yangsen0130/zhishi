@@ -2,14 +2,14 @@
 package com.example.article.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+// Removed: import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+// Removed: import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.article.mapper.ArticleMapper;
 import com.example.article.service.ArticleService;
 import com.example.article.service.PermissionService;
 import com.example.common.dto.ArticleCreateDTO;
 import com.example.common.entity.Article;
-import com.example.common.exception.BusinessException; // 仍然需要用于文章不存在等情况
+import com.example.common.exception.BusinessException;
 import com.example.common.feign.AuthFeignClient;
 import com.example.common.response.Code;
 import com.example.common.response.Response;
@@ -20,16 +20,17 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.math.BigDecimal; // 确保导入
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+// Removed: java.time.LocalDateTime; for createTime/updateTime if auto-filled
 
 @Slf4j
 @Service
-public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> implements ArticleService {
+public class ArticleServiceImpl implements ArticleService { // Removed "extends ServiceImpl<ArticleMapper, Article>"
 
     @Autowired
     private AuthFeignClient authFeignClient;
@@ -38,7 +39,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     private PermissionService permissionService;
 
     @Autowired
-    private ArticleMapper articleMapper;
+    private ArticleMapper articleMapper; // Injected ArticleMapper
 
     @Override
     public ArticleVO createArticle(ArticleCreateDTO articleDTO, Long authorId) {
@@ -48,9 +49,10 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         article.setAuthorId(authorId);
         article.setStatus(1);
         article.setPrice(articleDTO.getPrice());
+        // createTime and updateTime are typically handled by MyBatis-Plus auto-fill or DB defaults
 
-        boolean saved = this.save(article);
-        if (!saved) {
+        int saved = articleMapper.insert(article); // Changed from this.save(article)
+        if (saved <= 0) { // Check if insert was successful
             log.error("Failed to save article for authorId: {}", authorId);
             throw new BusinessException(Code.SYSTEM_ERROR, "创建文章失败");
         }
@@ -66,7 +68,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
 
     @Override
     public ArticleVO getArticleDetail(Long articleId, Long userId) {
-        Article article = articleMapper.selectById(articleId);
+        Article article = articleMapper.selectById(articleId); // Changed from articleMapper.selectById(articleId) or this.getById(articleId)
         if (article == null || article.getStatus() != 1) {
             // 对于文章不存在的情况，仍然抛出业务异常
             throw new BusinessException(Code.ARTICLE_NOT_EXIST);
@@ -107,10 +109,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
 
     @Override
     public List<ArticleTitleVO> listArticles() {
-        List<Article> articles = articleMapper.selectList(new LambdaQueryWrapper<Article>()
-                .select(Article::getId, Article::getTitle)
-                .eq(Article::getStatus, 1)
-                .orderByDesc(Article::getCreateTime));
+        List<Article> articles = articleMapper.selectIdAndTitleByStatusOrderByCreateTimeDesc(1); // Changed from articleMapper.selectList(LambdaQueryWrapper)
 
         if (articles.isEmpty()) {
             return new ArrayList<>();

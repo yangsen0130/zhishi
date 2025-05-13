@@ -1,7 +1,7 @@
 package com.example.order.service.impl;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+// Removed: import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+// Removed: import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.common.dto.PaymentSuccessEvent;
 import com.example.common.entity.MessageOutbox;
 import com.example.common.entity.Order;
@@ -23,10 +23,10 @@ import java.util.UUID;
 
 @Slf4j
 @Service
-public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements OrderService {
+public class OrderServiceImpl implements OrderService { // Removed "extends ServiceImpl<OrderMapper, Order>"
 
     @Autowired
-    private OrderMapper orderMapper;
+    private OrderMapper orderMapper; // Injected OrderMapper
 
     @Autowired
     private MessageOutboxMapper messageOutboxMapper;
@@ -57,7 +57,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         order.setCreateTime(LocalDateTime.now());
         order.setUpdateTime(LocalDateTime.now());
 
-        int inserted = orderMapper.insert(order); // MybatisPlus inserts and sets the generated 'id'
+        int inserted = orderMapper.insert(order); // Changed from orderMapper.insert(order) or this.save(order)
         if (inserted <= 0) {
             log.error("Failed to insert order for user: {}, article: {}", userId, articleId);
             throw new BusinessException(Code.SYSTEM_ERROR, "创建订单失败");
@@ -73,8 +73,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         log.info("Processing successful payment for business orderId: {}", orderId);
 
         // 1. Find the order by BUSINESS orderId
-        Order order = orderMapper.selectOne(new LambdaQueryWrapper<Order>()
-                .eq(Order::getOrderId, orderId)); // Find by business key
+        Order order = orderMapper.selectByBusinessOrderId(orderId); // Changed from orderMapper.selectOne(LambdaQueryWrapper)
 
         if (order == null) {
             log.error("Order not found for business orderId: {}", orderId);
@@ -95,7 +94,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         order.setPaymentTime(LocalDateTime.now());
         order.setUpdateTime(LocalDateTime.now());
         // Update using the Snowflake 'id' (primary key)
-        int updatedRows = orderMapper.updateById(order);
+        int updatedRows = orderMapper.updateById(order); // This is fine, uses ID
 
         if (updatedRows <= 0) {
             log.error("Failed to update order status to PAID for order DB ID: {}", order.getId());
@@ -136,7 +135,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         message.setRetryCount(0);
 
         // Insert into message_outbox (ShardingSphere routes based on aggregate_id)
-        int insertedMessages = messageOutboxMapper.insert(message);
+        int insertedMessages = messageOutboxMapper.insert(message); // This is fine (different mapper)
         if (insertedMessages <= 0) {
             log.error("Failed to insert message into outbox for order DB ID: {}", order.getId());
             throw new BusinessException(Code.SYSTEM_ERROR, "保存消息到发件箱失败");
@@ -150,13 +149,12 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
     @Transactional
     public void processPaymentFailure(String orderId) { // Use business orderId
         log.warn("Processing failed payment for business orderId: {}", orderId);
-        Order order = orderMapper.selectOne(new LambdaQueryWrapper<Order>()
-                .eq(Order::getOrderId, orderId)); // Find by business key
+        Order order = orderMapper.selectByBusinessOrderId(orderId); // Changed from orderMapper.selectOne(LambdaQueryWrapper)
 
         if (order != null && order.getStatus() == ORDER_STATUS_PENDING) {
             order.setStatus(ORDER_STATUS_FAILED);
             order.setUpdateTime(LocalDateTime.now());
-            orderMapper.updateById(order); // Update using Snowflake ID
+            orderMapper.updateById(order); // This is fine, uses ID
             log.info("Order status updated to FAILED for order DB ID: {}", order.getId());
         } else if (order == null) {
             log.error("Order not found for business orderId: {}", orderId);
@@ -168,20 +166,19 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
     @Override
     public Order getOrderByOrderId(String orderId) {
         log.info("获取订单信息, 订单ID: {}", orderId);
-        
+
         if (orderId == null) {
             throw new BusinessException(Code.PARAM_ERROR, "订单ID不能为空");
         }
-        
+
         // 使用业务ID查询订单
-        Order order = orderMapper.selectOne(new LambdaQueryWrapper<Order>()
-                .eq(Order::getOrderId, orderId));
-                
+        Order order = orderMapper.selectByBusinessOrderId(orderId); // Changed from orderMapper.selectOne(LambdaQueryWrapper)
+
         if (order == null) {
             log.error("订单不存在, 订单ID: {}", orderId);
             throw new BusinessException(Code.ORDER_NOT_EXIST);
         }
-        
+
         return order;
     }
 }

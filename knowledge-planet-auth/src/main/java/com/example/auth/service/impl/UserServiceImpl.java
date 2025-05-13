@@ -1,11 +1,10 @@
-
 // src/main/java/com/example/auth/service/impl/UserServiceImpl.java
 package com.example.auth.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.crypto.digest.BCrypt;
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+// Removed: import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+// Removed: import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.auth.mapper.UserMapper;
 import com.example.auth.service.UserService;
 import com.example.common.dto.UserLoginDTO;
@@ -22,9 +21,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.concurrent.TimeUnit;
+// Removed: java.time.LocalDateTime; for createTime/updateTime if auto-filled
 
 @Service
-public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements UserService {
+public class UserServiceImpl implements UserService { // Removed "extends ServiceImpl<UserMapper, User>"
+
+    @Autowired
+    private UserMapper userMapper; // Injected UserMapper
 
     @Autowired
     private RedisCache redisCache;
@@ -32,17 +35,15 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     @Override
     public UserVO register(UserRegisterDTO registerDTO) {
         // 检查用户名是否存在
-        long count = this.count(new LambdaQueryWrapper<User>()
-                .eq(User::getUsername, registerDTO.getUsername()));
-        if (count > 0) {
+        Long userCount = userMapper.selectCountByUsername(registerDTO.getUsername());
+        if (userCount != null && userCount > 0) {
             throw new BusinessException(Code.USERNAME_ALREADY_EXIST);
         }
 
         // 检查邮箱是否存在
         if(registerDTO.getEmail() != null) {
-            count = this.count(new LambdaQueryWrapper<User>()
-                    .eq(User::getEmail, registerDTO.getEmail()));
-            if (count > 0) {
+            Long emailCount = userMapper.selectCountByEmail(registerDTO.getEmail());
+            if (emailCount != null && emailCount > 0) {
                 throw new BusinessException(Code.EMAIL_ALREADY_EXIST);
             }
         }
@@ -55,9 +56,10 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         user.setEmail(registerDTO.getEmail());
         user.setPhone(registerDTO.getPhone());
         user.setStatus(1); // 正常状态
+        // createTime and updateTime are typically handled by MyBatis-Plus auto-fill or DB defaults
 
         // 保存用户
-        this.save(user);
+        userMapper.insert(user); // Changed from this.save(user)
 
         // 返回用户信息
         UserVO userVO = new UserVO();
@@ -77,10 +79,10 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         }
 
         // 查询用户
-        User user = this.getOne(new LambdaQueryWrapper<User>().eq(User::getUsername, loginDTO.getUsername()));
+        User user = userMapper.selectByUsername(loginDTO.getUsername()); // Changed from this.getOne(...)
 
         // 用户不存在或已禁用
-        if (user == null || user.getStatus() != 1) {
+        if (user == null || user.getStatus() != 1) { // user.getStatus() check is now vital here if not in SQL
             // 增加错误计数
             incrementLoginErrorCount(loginErrorKey);
             throw new BusinessException(Code.USER_NOT_EXIST);
@@ -113,7 +115,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     @Override
     public UserVO getUserInfo(Long userId) {
-        User user = this.getById(userId);
+        User user = userMapper.selectById(userId); // Changed from this.getById(userId)
         if (user == null) {
             throw new BusinessException(Code.USER_NOT_EXIST);
         }
