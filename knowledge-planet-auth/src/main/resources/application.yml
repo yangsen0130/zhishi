@@ -2,6 +2,9 @@
 # src/main/resources/application.yml
 server:
   port: 9101
+  tomcat:
+    threads:
+      max: 1000
 spring:
   profiles:
     active: local

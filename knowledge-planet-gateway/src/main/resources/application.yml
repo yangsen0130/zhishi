@@ -1,7 +1,9 @@
 # src/main/resources/application.yml
 server:
   port: 9100
-
+  tomcat:
+    threads:
+      max: 1000
 spring:
   # Keep existing codec/webflux settings
   codec:
@@ -31,8 +33,8 @@ spring:
             - StripPrefix=1
             - name: RequestRateLimiter # Keep existing filters
               args:
-                redis-rate-limiter.replenishRate: 10
-                redis-rate-limiter.burstCapacity: 20
+                redis-rate-limiter.replenishRate: 100
+                redis-rate-limiter.burstCapacity: 200
                 key-resolver: "#{@ipKeyResolver}"
 
         - id: article-service
@@ -44,8 +46,8 @@ spring:
             - StripPrefix=1
             - name: RequestRateLimiter # Keep existing filters
               args:
-                redis-rate-limiter.replenishRate: 20
-                redis-rate-limiter.burstCapacity: 40
+                redis-rate-limiter.replenishRate: 100
+                redis-rate-limiter.burstCapacity: 200
                 key-resolver: "#{@ipKeyResolver}"
 
         # *** ADDED: Route for Order Service ***
@@ -57,8 +59,8 @@ spring:
             - StripPrefix=1 # Remove /api prefix before forwarding
             - name: RequestRateLimiter # Apply rate limiting
               args:
-                redis-rate-limiter.replenishRate: 10 # Adjust rates as needed
-                redis-rate-limiter.burstCapacity: 20
+                redis-rate-limiter.replenishRate: 100 # Adjust rates as needed
+                redis-rate-limiter.burstCapacity: 200
                 key-resolver: "#{@ipKeyResolver}"
 
       discovery:

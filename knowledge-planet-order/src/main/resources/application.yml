@@ -1,7 +1,9 @@
 # src/main/resources/application.yml
 server:
   port: 9103
-
+  tomcat:
+    threads:
+      max: 1000
 spring:
   application:
     name: knowledge-planet-order
